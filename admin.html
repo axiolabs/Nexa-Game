@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin - Guess The Scene</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <header class="admin-header">
+    <h1>🛠 Panel Admin</h1>
+    <div class="header-actions">
+      <button class="btn btn-ghost" id="btn-logout" style="display:none">Cerrar sesión</button>
+      <a class="btn btn-ghost" href="index.html">← Volver al juego</a>
+    </div>
+  </header>
+
+  <!-- ============ LOGIN ============ -->
+  <main class="admin-main" id="login-area" style="display:none">
+    <section class="admin-card login-card">
+      <h2>🔒 Acceso restringido</h2>
+      <p class="hint">Este panel es solo para administradores. Ingresa la contraseña.</p>
+      <div class="login-form">
+        <input type="password" id="login-pw" placeholder="Contraseña" autocomplete="current-password">
+        <button class="btn btn-primary" id="btn-login">Entrar</button>
+      </div>
+      <p class="hint" id="login-msg" style="color:var(--bad)"></p>
+      <p class="hint">🔑 Contraseña por defecto: <code>admin123</code>. Cámbiala después de entrar.</p>
+    </section>
+  </main>
+
+  <main class="admin-main" id="admin-area" style="display:none">
+    <!-- ============ CONFIGURACIÓN ============ -->
+    <section class="admin-card" id="card-config">
+      <h2>⚙️ Configuración de partida</h2>
+      <div class="form-grid">
+        <label>Rondas por partida
+          <input type="number" id="cfg-rondas" min="1" max="30" value="5">
+        </label>
+        <label>Segundos entre pasos de blur
+          <input type="number" id="cfg-paso" min="0.5" max="15" step="0.5" value="2.5">
+        </label>
+        <label>Segundos por ronda (Contrarreloj)
+          <input type="number" id="cfg-contra" min="5" max="120" value="25">
+        </label>
+        <label>Vidas (Supervivencia)
+          <input type="number" id="cfg-vidas" min="1" max="10" value="3">
+        </label>
+        <label>Registros en el ranking
+          <input type="number" id="cfg-maxrank" min="3" max="50" value="10">
+        </label>
+      </div>
+      <button class="btn btn-primary" id="btn-save-config">💾 Guardar configuración</button>
+
+      <div class="pw-section">
+        <h3>🔑 Cambiar contraseña del admin</h3>
+        <div class="login-form">
+          <input type="password" id="new-pw" placeholder="Nueva contraseña" autocomplete="new-password">
+          <button class="btn" id="btn-change-pw">Cambiar</button>
+        </div>
+        <p class="hint" id="pw-msg"></p>
+      </div>
+    </section>
+
+    <!-- ============ NUEVA SERIE ============ -->
+    <section class="admin-card" id="card-new">
+      <h2>➕ Agregar serie</h2>
+      <div class="form-grid form-2col">
+        <label>Nombre de la serie
+          <input type="text" id="serie-nombre" placeholder="Ej: The Last of Us" maxlength="40">
+        </label>
+        <label>Categoría
+          <select id="serie-categoria">
+            <option value="Animada">Animada</option>
+            <option value="Anime">Anime</option>
+            <option value="Videojuego">Videojuego</option>
+            <option value="Live-action">Live-action</option>
+          </select>
+        </label>
+      </div>
+      <button class="btn btn-success" id="btn-add-serie">➕ Crear serie (sin imágenes)</button>
+    </section>
+
+    <!-- ============ LISTA DE SERIES ============ -->
+    <section class="admin-card" id="card-series">
+      <h2>📚 Series (con sus imágenes)</h2>
+      <p class="hint">Cada imagen tiene una <b>dificultad</b>: <b>1</b> = menos icónica / más difícil de adivinar, <b>5</b> = muy icónica / fácil. En el modo Galería se revelan de la más difícil a la más fácil.</p>
+      <p class="hint" id="space-warning"></p>
+      <div id="series-list"></div>
+    </section>
+  </main>
+
+  <script src="js/storage.js"></script>
+  <script src="js/seed.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

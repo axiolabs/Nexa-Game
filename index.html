@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guess The Scene - Adivina la serie</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="bg-fx"></div>
+
+  <!-- ===================== MENÚ ===================== -->
+  <section id="screen-menu" class="screen active">
+    <div class="menu-wrap">
+      <h1 class="logo">GUESS<span>THE</span>SCENE</h1>
+      <p class="tagline">Adivina la serie con filtro realista antes de que se revele</p>
+
+      <div class="name-row">
+        <input type="text" id="menu-name" maxlength="18" placeholder="Tu nombre de jugador">
+      </div>
+
+      <div class="high-score-box">
+        <span class="hs-label">RECORD</span>
+        <span id="hs-display" class="hs-value">0</span>
+      </div>
+
+      <button class="btn btn-big" data-action="modos">▶ JUGAR</button>
+      <button class="btn btn-resume hidden" id="btn-resume">⏯ Continuar partida</button>
+      <button class="btn" data-action="ranking">🏆 Ranking</button>
+      <button class="btn btn-ghost" data-action="admin">⚙ Panel Admin</button>
+    </div>
+  </section>
+
+  <!-- ===================== MODO ===================== -->
+  <section id="screen-modos" class="screen">
+    <div class="panel">
+      <button class="btn-back" data-action="menu">← Volver</button>
+      <h2>Elige un modo</h2>
+      <div class="mode-grid">
+        <div class="mode-card" data-mode="clasico">
+          <div class="mode-icon">🌫️</div>
+          <h3>Clásico Blur</h3>
+          <p>La imagen empieza borrosa y se va enfocando. Adivina lo antes posible.</p>
+          <span class="mode-tag">+100 pts máx.</span>
+        </div>
+        <div class="mode-card" data-mode="galeria">
+          <div class="mode-icon">🖼️</div>
+          <h3>Galería</h3>
+          <p>La serie tiene hasta 5 imágenes. Se revelan una a una. Adivina con las menos vistas.</p>
+          <span class="mode-tag">Hasta 5 pistas</span>
+        </div>
+        <div class="mode-card" data-mode="contrarreloj">
+          <div class="mode-icon">⏱️</div>
+          <h3>Contrarreloj</h3>
+          <p>El blur avanza solo si el tiempo te da. Respuesta penalizada por velocidad.</p>
+          <span class="mode-tag">Tiempo límite</span>
+        </div>
+        <div class="mode-card" data-mode="supervivencia">
+          <div class="mode-icon">❤️</div>
+          <h3>Supervivencia</h3>
+          <p>Tienes vidas limitadas. La racha multiplica tus puntos. Un fallo cuesta caro.</p>
+          <span class="mode-tag">Vidas + racha</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== DIFICULTAD ===================== -->
+  <section id="screen-dificultad" class="screen">
+    <div class="panel">
+      <button class="btn-back" data-action="modos">← Volver</button>
+      <h2>Dificultad</h2>
+      <p class="sub">Elige qué tan icónicas serán las pistas.</p>
+      <div class="diff-grid">
+        <button class="diff-card" data-diff="facil">
+          <span class="diff-stars">★★☆☆☆</span>
+          <h3>Fácil</h3>
+          <p>Solo imágenes muy icónicas. Adivinarlas es casi regalo.</p>
+        </button>
+        <button class="diff-card" data-diff="media">
+          <span class="diff-stars">★★★☆☆</span>
+          <h3>Media</h3>
+          <p>Mezcla de pistas fáciles y difíciles. Equilibrado.</p>
+        </button>
+        <button class="diff-card" data-diff="dificil">
+          <span class="diff-stars">★★★★★</span>
+          <h3>Difícil</h3>
+          <p>Todas las imágenes, incluidas las menos icónicas. Para expertos.</p>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== JUEGO ===================== -->
+  <section id="screen-game" class="screen">
+    <div class="game-top">
+      <div class="game-hud">
+        <div class="hud-item">Ronda <span id="hud-ronda">1/5</span></div>
+        <div class="hud-item">Puntos <span id="hud-puntos">0</span></div>
+        <div class="hud-item hud-lives" id="hud-lives-wrap" style="display:none">
+          Vidas <span id="hud-lives">3</span>
+        </div>
+        <div class="hud-item hud-streak" id="hud-streak-wrap" style="display:none">
+          Racha <span id="hud-streak">x0</span>
+        </div>
+      </div>
+      <div class="game-timer" id="timer-wrap" style="display:none">
+        <div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>
+        <span id="timer-seg">25s</span>
+      </div>
+    </div>
+
+    <div class="reveal-stage">
+      <!-- Modo Clásico / Contrarreloj / Supervivencia: 1 imagen -->
+      <div class="img-single-wrap" id="img-single-wrap">
+        <div class="img-reveal hidden" id="img-single"></div>
+        <div class="step-tags" id="step-tags"></div>
+        <div class="blur-note" id="blur-note"></div>
+      </div>
+
+      <!-- Modo Galería: hasta 5 imágenes -->
+      <div class="gallery-grid" id="gallery-grid"></div>
+      <div class="step-tags" id="step-tags-gal"></div>
+    </div>
+
+    <div class="answer-zone">
+      <div class="options-grid" id="options-grid"></div>
+      <div class="msg-box hidden" id="msg-box"></div>
+      <div class="answer-row hidden" id="answer-row">
+        <button class="btn btn-ghost" id="btn-reveal">Mostrar respuesta</button>
+        <button class="btn" id="btn-next">Siguiente →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADO RONDA ===================== -->
+  <section id="screen-round" class="screen">
+    <div class="panel round-panel">
+      <div class="round-face" id="round-face">✅</div>
+      <h2 id="round-title">¡Correcto!</h2>
+      <p id="round-series" class="round-series"></p>
+      <p id="round-points" class="round-points">+80 pts</p>
+      <div class="round-detail" id="round-detail"></div>
+      <p class="round-total">Total: <span id="round-total">0</span> pts</p>
+      <button class="btn btn-big" id="btn-round-next">Continuar →</button>
+    </div>
+  </section>
+
+  <!-- ===================== RESULTADO FINAL ===================== -->
+  <section id="screen-end" class="screen">
+    <div class="panel end-panel">
+      <h2 class="end-title">Fin de la partida</h2>
+      <div class="end-score">
+        <span class="end-label">Puntos</span>
+        <span class="end-value" id="end-score">0</span>
+      </div>
+      <div class="end-stats" id="end-stats"></div>
+      <div class="end-record" id="end-record"></div>
+      <button class="btn btn-big" data-action="modos">Jugar otra vez</button>
+      <button class="btn btn-ghost" data-action="menu">Volver al menú</button>
+    </div>
+  </section>
+
+  <!-- ===================== RANKING ===================== -->
+  <section id="screen-ranking" class="screen">
+    <div class="panel">
+      <button class="btn-back" data-action="menu">← Volver</button>
+      <h2>🏆 Ranking</h2>
+      <div class="top-banner">
+        <div>Record de la máquina</div>
+        <div class="top-record" id="rank-record">0</div>
+      </div>
+      <table class="rank-table" id="rank-table">
+        <thead><tr><th>#</th><th>Jugador</th><th>Modo</th><th>Puntos</th><th>Fecha</th></tr></thead>
+        <tbody id="rank-body"></tbody>
+      </table>
+      <p class="empty-note" id="rank-empty">Aún no hay registros. ¿Primera partida?</p>
+      <button class="btn btn-ghost" id="btn-clear-ranking">Limpiar ranking</button>
+    </div>
+  </section>
+
+  <script src="js/storage.js"></script>
+  <script src="js/seed.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
