@@ -105,52 +105,74 @@ var G = (function () {
     renderRanking();
     loadAnnouncements();
     showScreen('menu');
+
+    // Si hay nube configurada, sincroniza rankings, series y config
+    if (Store.useCloud()) {
+      Store.syncFromCloud().then(function () {
+        renderRanking();
+        loadAnnouncements();
+      }).catch(function () {});
+    }
   }
 
   function loadAnnouncements() {
+    if (Store.useCloud()) {
+      Store.pullAnnouncements().then(function (list) {
+        renderAnnouncements(list || []);
+      }).catch(function () { loadLocalAnnouncements(); });
+    } else {
+      loadLocalAnnouncements();
+    }
+  }
+
+  function loadLocalAnnouncements() {
     fetch('data/announcements.json')
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
-        var box = $('announcements-box');
-        if (!data || !data.announcements || data.announcements.length === 0) return;
-        var read = '';
-        try { read = localStorage.getItem('gts_ann_read') || ''; } catch (e) {}
-        box.innerHTML = '';
-        var nuevas = 0;
-        data.announcements.forEach(function (ann) {
-          var key = 'ann_' + (ann.titulo || '') + '_' + (ann.fecha || '');
-          if (read.indexOf(key) !== -1) return;
-          var card = document.createElement('div');
-          card.className = 'ann-card';
-          var cTitle = document.createElement('div');
-          cTitle.className = 'ann-title';
-          cTitle.textContent = '📢 ' + (ann.titulo || 'Anuncio');
-          var cMsg = document.createElement('div');
-          cMsg.className = 'ann-msg';
-          cMsg.textContent = ann.mensaje || '';
-          var cDate = document.createElement('div');
-          cDate.className = 'ann-date';
-          cDate.textContent = ann.fecha || '';
-          var close = document.createElement('button');
-          close.className = 'ann-close';
-          close.textContent = '✕';
-          close.addEventListener('click', function () {
-            card.remove();
-            try {
-              localStorage.setItem('gts_ann_read', (localStorage.getItem('gts_ann_read') || '') + key + ',');
-            } catch (e) {}
-            if (!box.querySelector('.ann-card')) box.classList.add('hidden');
-          });
-          card.appendChild(close);
-          card.appendChild(cTitle);
-          card.appendChild(cMsg);
-          card.appendChild(cDate);
-          box.appendChild(card);
-          nuevas++;
-        });
-        if (nuevas > 0) box.classList.remove('hidden');
+        renderAnnouncements(data ? (data.announcements || []) : []);
       })
       .catch(function () {});
+  }
+
+  function renderAnnouncements(list) {
+    var box = $('announcements-box');
+    if (!list || list.length === 0) return;
+    var read = '';
+    try { read = localStorage.getItem('gts_ann_read') || ''; } catch (e) {}
+    box.innerHTML = '';
+    var nuevas = 0;
+    list.forEach(function (ann) {
+      var key = 'ann_' + (ann.titulo || '') + '_' + (ann.fecha || '');
+      if (read.indexOf(key) !== -1) return;
+      var card = document.createElement('div');
+      card.className = 'ann-card';
+      var cTitle = document.createElement('div');
+      cTitle.className = 'ann-title';
+      cTitle.textContent = '📢 ' + (ann.titulo || 'Anuncio');
+      var cMsg = document.createElement('div');
+      cMsg.className = 'ann-msg';
+      cMsg.textContent = ann.mensaje || '';
+      var cDate = document.createElement('div');
+      cDate.className = 'ann-date';
+      cDate.textContent = ann.fecha || '';
+      var close = document.createElement('button');
+      close.className = 'ann-close';
+      close.textContent = '✕';
+      close.addEventListener('click', function () {
+        card.remove();
+        try {
+          localStorage.setItem('gts_ann_read', (localStorage.getItem('gts_ann_read') || '') + key + ',');
+        } catch (e) {}
+        if (!box.querySelector('.ann-card')) box.classList.add('hidden');
+      });
+      card.appendChild(close);
+      card.appendChild(cTitle);
+      card.appendChild(cMsg);
+      card.appendChild(cDate);
+      box.appendChild(card);
+      nuevas++;
+    });
+    if (nuevas > 0) box.classList.remove('hidden');
   }
 
   function handleAction(action) {
@@ -611,29 +633,35 @@ var G = (function () {
   /* ---------------- Ranking ---------------- */
 
   function renderRanking() {
-    var top = Store.getTop();
-    var tbody = $('rank-body');
-    tbody.innerHTML = '';
-    $('rank-record').textContent = Store.getHighScore();
-    $('rank-empty').style.display = top.length ? 'none' : 'block';
-    var medals = ['🥇', '🥈', '🥉'];
-    top.forEach(function (e, i) {
-      var tr = document.createElement('tr');
-      var td1 = document.createElement('td');
-      td1.className = 'medal';
-      td1.textContent = i < 3 ? medals[i] : (i + 1);
-      var td2 = document.createElement('td');
-      td2.textContent = e.nombre;
-      var td3 = document.createElement('td');
-      td3.textContent = e.modo;
-      var td4 = document.createElement('td');
-      td4.className = 'puntos';
-      td4.textContent = e.puntos;
-      var td5 = document.createElement('td');
-      td5.textContent = e.fecha;
-      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tr.appendChild(td5);
-      tbody.appendChild(tr);
-    });
+    var render = function (top) {
+      var tbody = $('rank-body');
+      tbody.innerHTML = '';
+      $('rank-record').textContent = Store.getHighScore();
+      $('rank-empty').style.display = top.length ? 'none' : 'block';
+      var medals = ['🥇', '🥈', '🥉'];
+      top.forEach(function (e, i) {
+        var tr = document.createElement('tr');
+        var td1 = document.createElement('td');
+        td1.className = 'medal';
+        td1.textContent = i < 3 ? medals[i] : (i + 1);
+        var td2 = document.createElement('td');
+        td2.textContent = e.nombre;
+        var td3 = document.createElement('td');
+        td3.textContent = e.modo;
+        var td4 = document.createElement('td');
+        td4.className = 'puntos';
+        td4.textContent = e.puntos;
+        var td5 = document.createElement('td');
+        td5.textContent = e.fecha;
+        tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4); tr.appendChild(td5);
+        tbody.appendChild(tr);
+      });
+    };
+    if (Store.useCloud()) {
+      Store.refreshTop().then(function (top) { render(top); }).catch(function () { render(Store.getTop()); });
+    } else {
+      render(Store.getTop());
+    }
   }
 
   /* ---------------- HUD ---------------- */

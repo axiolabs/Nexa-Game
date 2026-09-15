@@ -15,7 +15,9 @@ var Admin = (function () {
     var total = 0;
     var series = Store.getSeries();
     series.forEach(function (s) {
-      s.imagenes.forEach(function (im) { total += im.data.length * 0.75; });
+      s.imagenes.forEach(function (im) {
+        if ((im.data || '').indexOf('data:') === 0) total += im.data.length * 0.75;
+      });
     });
     return total;
   }
@@ -122,16 +124,46 @@ var Admin = (function () {
     renderSeries();
   }
 
+  function uploadImageToCloudinary(file) {
+    var c = Store.getCloudinary();
+    var fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', c.preset);
+    return fetch('https://api.cloudinary.com/v1_1/' + encodeURIComponent(c.cloudName) + '/image/upload', {
+      method: 'POST',
+      body: fd
+    }).then(function (r) {
+      return r.json().catch(function () { return null; }).then(function (data) {
+        if (!r.ok || !data || !data.secure_url) {
+          throw new Error(data && data.error && data.error.message ? data.error.message : ('HTTP ' + r.status));
+        }
+        return data.secure_url;
+      });
+    });
+  }
+
   async function addImage(serieId, files) {
     var series = Store.getSeries();
     var idx = series.findIndex(function (s) { return s.id === serieId; });
     if (idx === -1) return;
     var ok = 0;
+    var cloud = Store.getCloudinary();
     for (var i = 0; i < files.length; i++) {
-      var data = await readImages(files[i]);
-      if (data.length > 800 * 1024) {
-        alert('La imagen "' + files[i].name + '" es muy pesada (' + Math.round(data.length / 1024) + 'KB). Usa imágenes de menos de 800KB.');
-        continue;
+      var data;
+      if (cloud) {
+        try {
+          data = await uploadImageToCloudinary(files[i]);
+          if (!data) continue;
+        } catch (e) {
+          alert('❌ No se pudo subir "' + files[i].name + '" a Cloudinary: ' + (e.message || e));
+          continue;
+        }
+      } else {
+        data = await readImages(files[i]);
+        if (data.length > 800 * 1024) {
+          alert('La imagen "' + files[i].name + '" es muy pesada (' + Math.round(data.length / 1024) + 'KB). Usa imágenes de menos de 800KB o configura Cloudinary arriba.');
+          continue;
+        }
       }
       if (series[idx].imagenes.length >= 5) break;
       var d = Math.min(series[idx].imagenes.length + 1, 5);
@@ -314,11 +346,74 @@ var Admin = (function () {
     }
   }
 
+  /* ---------------- Cloudinary ---------------- */
+
+  function cdMsg(text, isErr) {
+    var el = $('cd-msg');
+    el.textContent = text;
+    el.style.color = isErr ? 'var(--bad)' : 'var(--good)';
+  }
+
+  function loadCloudinaryStatus() {
+    var el = $('cloudinary-status');
+    var c = Store.getCloudinary();
+    if (c) {
+      el.innerHTML = '✅ Configurado: <code>' + c.cloudName + '</code> · preset <code>' + c.preset + '</code>. Las imágenes nuevas se subirán a Cloudinary como URLs públicas.';
+      $('cd-cloud').value = c.cloudName;
+      $('cd-preset').value = c.preset;
+    } else {
+      el.textContent = 'No configurado. Las imágenes se guardan en el navegador (base64). Para imágenes sin límite de espacio, configura Cloudinary.';
+    }
+  }
+
+  function saveCloudinary() {
+    var cloud = $('cd-cloud').value.trim();
+    var preset = $('cd-preset').value.trim();
+    if (!cloud || !preset) { cdMsg('❌ Ingresa el Cloud Name y el Upload Preset.', true); return; }
+    Store.setCloudinary({ cloudName: cloud, preset: preset });
+    cdMsg('✅ Configuración de Cloudinary guardada.');
+    loadCloudinaryStatus();
+  }
+
+  function clearCloudinary() {
+    Store.clearCloudinary();
+    $('cd-cloud').value = '';
+    $('cd-preset').value = '';
+    cdMsg('🗑 Configuración de Cloudinary eliminada.');
+    loadCloudinaryStatus();
+  }
+
+  function testCloudinary() {
+    if (!Store.getCloudinary()) { cdMsg('❌ Guarda la configuración primero.', true); return; }
+    cdMsg('Probando subida...');
+    var svg = new Blob(['<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#00ff00"/></svg>'], { type: 'image/svg+xml' });
+    var file = new File([svg], 'test.svg', { type: 'image/svg+xml' });
+    uploadImageToCloudinary(file)
+      .then(function (url) {
+        cdMsg('✅ Subida de prueba OK: ' + url);
+      })
+      .catch(function (e) {
+        cdMsg('❌ Falló la subida de prueba: ' + (e.message || e), true);
+      });
+  }
+
   /* ---------------- Anuncios ---------------- */
 
   var announcements = { announcements: [] };
 
   function fetchAnnouncements() {
+    if (Store.useCloud()) {
+      return Store.pullAnnouncements()
+        .then(function (list) {
+          announcements = { announcements: (list || []).slice() };
+          renderAnnouncements();
+        })
+        .catch(function () { fetchLocalAnnouncements(); });
+    }
+    return fetchLocalAnnouncements();
+  }
+
+  function fetchLocalAnnouncements() {
     return fetch('data/announcements.json')
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (data) {
@@ -359,7 +454,7 @@ var Admin = (function () {
       del.textContent = '🗑 Quitar';
       del.addEventListener('click', function () {
         announcements.announcements.splice(i, 1);
-        renderAnnouncements();
+        pushAnnouncementsAndRender();
       });
       actions.appendChild(del);
       head.appendChild(actions);
@@ -367,6 +462,15 @@ var Admin = (function () {
       item.appendChild(msg);
       list.appendChild(item);
     });
+  }
+
+  function pushAnnouncementsAndRender() {
+    renderAnnouncements();
+    if (Store.useCloud()) {
+      Store.pushAnnouncements(announcements.announcements || [])
+        .then(function () { sbMsg('📢 Anuncios sincronizados con la nube.'); })
+        .catch(function (e) { sbMsg('⚠ No se pudo sincronizar anuncios: ' + (e.message || e), true); });
+    }
   }
 
   function addAnnouncement() {
@@ -380,7 +484,7 @@ var Admin = (function () {
     });
     $('ann-title').value = '';
     $('ann-msg').value = '';
-    renderAnnouncements();
+    pushAnnouncementsAndRender();
   }
 
   function exportAnnouncements() {
@@ -409,6 +513,109 @@ var Admin = (function () {
     reader.readAsText(file);
   }
 
+  /* ---------------- Supabase ---------------- */
+
+  function sbMsg(text, isErr) {
+    var el = $('sb-msg');
+    el.textContent = text;
+    el.style.color = isErr ? 'var(--bad)' : 'var(--good)';
+  }
+
+  function loadSupabaseStatus() {
+    var el = $('supabase-status');
+    if (Supabase.isConfigured()) {
+      var creds = Supabase.getCreds();
+      el.innerHTML = '✅ Conectado: <code>' + (creds.url || '').replace(/^https?:\/\//, '') + '</code>' +
+        (creds.serviceKey ? ' · modo admin activo' : ' · ⚠ sin Service Key (no se pueden guardar cambios)');
+      $('sb-url').value = creds.url || '';
+      $('sb-anon').value = creds.anonKey || '';
+      $('sb-service').value = creds.serviceKey || '';
+    } else {
+      el.textContent = 'No conectado. Los datos son locales por ahora.';
+    }
+  }
+
+  function connectSupabase() {
+    var url = $('sb-url').value.trim();
+    var anon = $('sb-anon').value.trim();
+    var service = $('sb-service').value.trim();
+    if (!url || !anon) { sbMsg('❌ Ingresa la Project URL y la Anonymous Key.', true); return; }
+    Supabase.setCreds({ url: url, anonKey: anon, serviceKey: service || '' });
+    btnSbBusy(true);
+    Supabase.testConnection('anon')
+      .then(function () {
+        sbMsg('✅ Conexión OK. Descargando datos compartidos...');
+        return Store.syncFromCloud();
+      })
+      .then(function () {
+        return fetchAnnouncements();
+      })
+      .then(function () {
+        sbMsg('✅ Conectado y datos sincronizados.');
+        btnSbBusy(false);
+        loadSupabaseStatus();
+        renderSeries();
+      })
+      .catch(function (e) {
+        sbMsg('❌ No se pudo conectar: ' + (e.message || e), true);
+        btnSbBusy(false);
+      });
+  }
+
+  function btnSbBusy(b) {
+    $('btn-sb-connect').disabled = b;
+    $('btn-sb-test').disabled = b;
+    $('btn-sb-seed').disabled = b;
+  }
+
+  function disconnectSupabase() {
+    if (!confirm('¿Desconectar Supabase? Volverás a modo local.')) return;
+    Supabase.clearCreds();
+    sbMsg('');
+    loadSupabaseStatus();
+    renderSeries();
+  }
+
+  function testSupabase() {
+    var url = $('sb-url').value.trim();
+    var anon = $('sb-anon').value.trim();
+    var service = $('sb-service').value.trim();
+    Supabase.setCreds({ url: url, anonKey: anon, serviceKey: service || '' });
+    btnSbBusy(true);
+    var p;
+    if (service) {
+      p = Supabase.testConnection('admin').then(function () { return 'admin'; });
+    } else {
+      p = Supabase.testConnection('anon').then(function () { return 'anon'; });
+    }
+    p.then(function (m) {
+      sbMsg('✅ Conexión válida (' + m + ').');
+      btnSbBusy(false);
+      loadSupabaseStatus();
+    }).catch(function (e) {
+      sbMsg('❌ Falló: ' + (e.message || e), true);
+      btnSbBusy(false);
+    });
+  }
+
+  function seedToCloud() {
+    if (!Supabase.isConfigured()) { sbMsg('❌ Conecta Supabase primero.', true); return; }
+    if (!confirm('¿Subir las series demostración (SVG) a la nube? Los datos actuales de la nube se mantendrán.')) return;
+    btnSbBusy(true);
+    sbMsg('Subiendo series demo a la nube...');
+    var local = Store.getSeries();
+    Supabase.saveSeries(JSON.parse(JSON.stringify(local))).then(function () {
+      return Store.syncFromCloud();
+    }).then(function () {
+      sbMsg('✅ Datos demo subidos y sincronizados.');
+      btnSbBusy(false);
+      renderSeries();
+    }).catch(function (e) {
+      sbMsg('❌ Error al subir: ' + (e.message || e), true);
+      btnSbBusy(false);
+    });
+  }
+
   /* ---------------- Init ---------------- */
 
   function initAdmin() {
@@ -421,6 +628,15 @@ var Admin = (function () {
       if (this.files.length) loadAnnouncementsFile(this.files[0]);
     });
     fetchAnnouncements();
+    loadSupabaseStatus();
+    loadCloudinaryStatus();
+    $('btn-sb-connect').addEventListener('click', connectSupabase);
+    $('btn-sb-disconnect').addEventListener('click', disconnectSupabase);
+    $('btn-sb-test').addEventListener('click', testSupabase);
+    $('btn-sb-seed').addEventListener('click', seedToCloud);
+    $('btn-cd-save').addEventListener('click', saveCloudinary);
+    $('btn-cd-clear').addEventListener('click', clearCloudinary);
+    $('btn-cd-test').addEventListener('click', testCloudinary);
   }
 
   function init() {

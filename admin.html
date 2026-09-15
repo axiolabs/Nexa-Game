@@ -62,6 +62,65 @@
       </div>
     </section>
 
+    <!-- ============ SUPABASE ============ -->
+    <section class="admin-card" id="card-supabase">
+      <h2>☁️ Datos compartidos (Supabase)</h2>
+      <p class="hint">Conecta una base de datos Supabase para que rankings, series, config y anuncios se compartan entre todos los jugadores. Sin esto, cada jugador ve solo sus propios datos locales.</p>
+
+      <div id="supabase-status" class="hint" style="margin-bottom:12px"></div>
+
+      <div class="pw-section">
+        <div class="form-grid form-2col">
+          <label>Project URL
+            <input type="text" id="sb-url" placeholder="https://xxxxx.supabase.co">
+          </label>
+          <label>Anonymous Key (pública, lee datos)
+            <input type="password" id="sb-anon" placeholder="eyJ...">
+          </label>
+        </div>
+        <div class="form-grid form-2col" style="margin-top:8px">
+          <label>Service Role Key (secreta, escribe datos)
+            <input type="password" id="sb-service" placeholder="eyJ... (solo en este navegador)">
+          </label>
+          <div></div>
+        </div>
+        <p class="hint" style="margin-top:8px">La <b>Service Role Key</b> nunca se envía a los jugadores. Está almacenada solo en este navegador. En Supabase Dashboard → Project Settings → API.</p>
+        <div class="pw-section" style="border-top:none;margin-top:10px;padding-top:0">
+          <button class="btn btn-primary" id="btn-sb-connect">🔗 Conectar</button>
+          <button class="btn btn-danger" id="btn-sb-disconnect" style="margin-left:10px">Desconectar</button>
+          <button class="btn" id="btn-sb-test" style="margin-left:10px">Probar conexión</button>
+          <button class="btn btn-success" id="btn-sb-seed" style="margin-left:10px">🌱 Sembrar datos demo en nube</button>
+        </div>
+        <p class="hint" id="sb-msg" style="margin-top:8px"></p>
+      </div>
+    </section>
+
+    <!-- ============ CLOUDINARY ============ -->
+    <section class="admin-card" id="card-cloudinary">
+      <h2>🖼️ Almacenamiento de imágenes (Cloudinary)</h2>
+      <p class="hint">Las imágenes se suben a Cloudinary y se muestran a todos los jugadores desde una URL pública en su CDN. Así no llenas el almacenamiento local del navegador (5MB) ni pesas la base de datos de Supabase.</p>
+
+      <div id="cloudinary-status" class="hint" style="margin-bottom:12px"></div>
+
+      <div class="pw-section">
+        <div class="form-grid form-2col">
+          <label>Cloud Name
+            <input type="text" id="cd-cloud" placeholder="tucuenta">
+          </label>
+          <label>Upload Preset (unsigned)
+            <input type="password" id="cd-preset" placeholder="mi_preset_unsigned">
+          </label>
+        </div>
+        <p class="hint" style="margin-top:8px">Cómo crearlo: Cloudinary Dashboard → <b>Settings</b> → <b>Upload</b> → <b>Upload presets</b> → <b>Add upload preset</b>, marca <b>unsigned</b> y define límites (formatos permitidos, tamaño máx.). El preset te permite subir imágenes sin exponer tu API Secret.</p>
+        <div class="pw-section" style="border-top:none;margin-top:10px;padding-top:0">
+          <button class="btn btn-primary" id="btn-cd-save">💾 Guardar configuración</button>
+          <button class="btn btn-danger" id="btn-cd-clear" style="margin-left:10px">Quitar config</button>
+          <button class="btn" id="btn-cd-test" style="margin-left:10px">Probar subida</button>
+        </div>
+        <p class="hint" id="cd-msg" style="margin-top:8px"></p>
+      </div>
+    </section>
+
     <!-- ============ NUEVA SERIE ============ -->
     <section class="admin-card" id="card-new">
       <h2>➕ Agregar serie</h2>
@@ -117,6 +176,7 @@
     </section>
   </main>
 
+  <script src="js/supabase.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/seed.js"></script>
   <script src="js/admin.js"></script>
