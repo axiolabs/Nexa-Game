@@ -100,6 +100,37 @@ body {
   border-color: rgba(167,139,250,.4);
 }
 
+/* ---------- Anuncios ---------- */
+#announcements-box {
+  margin: 0 auto 20px;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ann-card {
+  position: relative;
+  background: rgba(251,191,36,.08);
+  border: 1px solid rgba(251,191,36,.35);
+  border-radius: 14px;
+  padding: 14px 40px 12px 16px;
+  text-align: left;
+}
+.ann-title { font-weight: 800; font-size: 15px; color: #fbbf24; }
+.ann-msg { color: var(--text); font-size: 14px; margin-top: 4px; }
+.ann-date { color: var(--dim); font-size: 12px; margin-top: 6px; }
+.ann-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--dim);
+  font-size: 16px;
+  cursor: pointer;
+}
+.ann-close:hover { color: var(--bad); }
+
 /* ---------- Botones ---------- */
 .btn {
   cursor: pointer;

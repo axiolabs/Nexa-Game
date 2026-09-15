@@ -68,6 +68,27 @@ body {
 }
 .pw-section h3 { font-size: 16px; margin-bottom: 6px; }
 
+#card-announcements textarea,
+#card-announcements input[type="text"],
+#card-announcements input[type="date"] {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--card-bor);
+  background: rgba(255,255,255,.06);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 10px;
+}
+#card-announcements textarea { resize: vertical; }
+.ann-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 6px 0 10px;
+}
+
 .admin-main {
   max-width: 980px;
   margin: 0 auto;

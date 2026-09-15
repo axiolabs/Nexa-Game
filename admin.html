@@ -75,6 +75,7 @@
             <option value="Anime">Anime</option>
             <option value="Videojuego">Videojuego</option>
             <option value="Live-action">Live-action</option>
+            <option value="Fotorealista">Fotorealista</option>
           </select>
         </label>
       </div>
@@ -87,6 +88,32 @@
       <p class="hint">Cada imagen tiene una <b>dificultad</b>: <b>1</b> = menos icónica / más difícil de adivinar, <b>5</b> = muy icónica / fácil. En el modo Galería se revelan de la más difícil a la más fácil.</p>
       <p class="hint" id="space-warning"></p>
       <div id="series-list"></div>
+    </section>
+
+    <!-- ============ ANUNCIOS ============ -->
+    <section class="admin-card" id="card-announcements">
+      <h2>📢 Anuncios compartidos</h2>
+      <p class="hint">Los anuncios se guardan en un archivo JSON que todos los usuarios ven. Después de crear/editar, descarga el archivo y súbelo a GitHub para que Vercel lo despliegue.</p>
+
+      <div class="form-grid form-2col" style="margin-bottom:16px">
+        <label>Título del anuncio
+          <input type="text" id="ann-title" placeholder="Ej: ¡Nuevas series!" maxlength="60">
+        </label>
+        <label>Fecha
+          <input type="date" id="ann-date">
+        </label>
+      </div>
+      <label>Mensaje
+        <textarea id="ann-msg" rows="3" placeholder="Describe el anuncio..." maxlength="300"></textarea>
+      </label>
+      <div class="ann-actions">
+        <button class="btn btn-success" id="btn-add-ann">➕ Agregar anuncio</button>
+        <button class="btn btn-primary" id="btn-export-ann">📥 Descargar announcements.json</button>
+        <button class="btn btn-ghost" id="btn-load-ann">📂 Cargar archivo existente</button>
+        <input type="file" id="ann-file-input" accept=".json" style="display:none">
+      </div>
+
+      <div id="ann-list" style="margin-top:16px"></div>
     </section>
   </main>
 

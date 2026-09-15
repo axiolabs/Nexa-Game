@@ -96,9 +96,6 @@ var G = (function () {
 
     $('btn-resume').addEventListener('click', resumeGame);
     $('btn-round-next').addEventListener('click', nextRound);
-    $('btn-clear-ranking').addEventListener('click', function () {
-      if (confirm('¿Borrar todo el ranking y el récord?')) { Store.clearTop(); $('hs-display').textContent = 0; renderRanking(); }
-    });
 
     var snap = Store.getSnapshot();
     if (snap && snap.queue && snap.queue.length) {
@@ -106,7 +103,54 @@ var G = (function () {
     }
 
     renderRanking();
+    loadAnnouncements();
     showScreen('menu');
+  }
+
+  function loadAnnouncements() {
+    fetch('data/announcements.json')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        var box = $('announcements-box');
+        if (!data || !data.announcements || data.announcements.length === 0) return;
+        var read = '';
+        try { read = localStorage.getItem('gts_ann_read') || ''; } catch (e) {}
+        box.innerHTML = '';
+        var nuevas = 0;
+        data.announcements.forEach(function (ann) {
+          var key = 'ann_' + (ann.titulo || '') + '_' + (ann.fecha || '');
+          if (read.indexOf(key) !== -1) return;
+          var card = document.createElement('div');
+          card.className = 'ann-card';
+          var cTitle = document.createElement('div');
+          cTitle.className = 'ann-title';
+          cTitle.textContent = '📢 ' + (ann.titulo || 'Anuncio');
+          var cMsg = document.createElement('div');
+          cMsg.className = 'ann-msg';
+          cMsg.textContent = ann.mensaje || '';
+          var cDate = document.createElement('div');
+          cDate.className = 'ann-date';
+          cDate.textContent = ann.fecha || '';
+          var close = document.createElement('button');
+          close.className = 'ann-close';
+          close.textContent = '✕';
+          close.addEventListener('click', function () {
+            card.remove();
+            try {
+              localStorage.setItem('gts_ann_read', (localStorage.getItem('gts_ann_read') || '') + key + ',');
+            } catch (e) {}
+            if (!box.querySelector('.ann-card')) box.classList.add('hidden');
+          });
+          card.appendChild(close);
+          card.appendChild(cTitle);
+          card.appendChild(cMsg);
+          card.appendChild(cDate);
+          box.appendChild(card);
+          nuevas++;
+        });
+        if (nuevas > 0) box.classList.remove('hidden');
+      })
+      .catch(function () {});
   }
 
   function handleAction(action) {
@@ -553,12 +597,6 @@ var G = (function () {
     var name = Store.getPlayerName();
     if (name) enterRanking(name);
     showScreen('end');
-  }
-
-  function saveTopScore() {
-    var name = Store.getPlayerName();
-    if (!name) return;
-    enterRanking(name);
   }
 
   function enterRanking(name) {

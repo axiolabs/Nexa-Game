@@ -314,11 +314,113 @@ var Admin = (function () {
     }
   }
 
+  /* ---------------- Anuncios ---------------- */
+
+  var announcements = { announcements: [] };
+
+  function fetchAnnouncements() {
+    return fetch('data/announcements.json')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (data) {
+          announcements = { announcements: (data.announcements || []).slice() };
+          renderAnnouncements();
+        }
+      })
+      .catch(function () {
+        announcements = { announcements: [] };
+        renderAnnouncements();
+      });
+  }
+
+  function renderAnnouncements() {
+    var list = $('ann-list');
+    var arr = announcements.announcements || [];
+    if (arr.length === 0) {
+      list.innerHTML = '<p class="hint">No hay anuncios. Crea el primero arriba.</p>';
+      return;
+    }
+    list.innerHTML = '';
+    arr.forEach(function (ann, i) {
+      var item = document.createElement('div');
+      item.className = 'serie-item';
+      var head = document.createElement('div');
+      head.className = 'serie-head';
+      head.innerHTML = '<div><span class="name"></span> <span class="badge"></span></div>';
+      head.querySelector('.name').textContent = ann.titulo || '(sin título)';
+      head.querySelector('.badge').textContent = ann.fecha || '';
+      var msg = document.createElement('p');
+      msg.className = 'hint';
+      msg.textContent = ann.mensaje || '';
+      var actions = document.createElement('div');
+      actions.className = 'serie-actions';
+      var del = document.createElement('button');
+      del.className = 'btn btn-danger btn-sm';
+      del.textContent = '🗑 Quitar';
+      del.addEventListener('click', function () {
+        announcements.announcements.splice(i, 1);
+        renderAnnouncements();
+      });
+      actions.appendChild(del);
+      head.appendChild(actions);
+      item.appendChild(head);
+      item.appendChild(msg);
+      list.appendChild(item);
+    });
+  }
+
+  function addAnnouncement() {
+    var titulo = $('ann-title').value.trim();
+    var mensaje = $('ann-msg').value.trim();
+    if (!titulo) { $('ann-title').focus(); return; }
+    announcements.announcements.push({
+      titulo: titulo,
+      mensaje: mensaje,
+      fecha: $('ann-date').value || new Date().toISOString().slice(0, 10)
+    });
+    $('ann-title').value = '';
+    $('ann-msg').value = '';
+    renderAnnouncements();
+  }
+
+  function exportAnnouncements() {
+    var data = JSON.stringify({ announcements: announcements.announcements || [] }, null, 2);
+    var blob = new Blob([data], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'announcements.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function loadAnnouncementsFile(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(reader.result);
+        if (!data || !Array.isArray(data.announcements)) throw new Error('invalid');
+        announcements = { announcements: data.announcements };
+        renderAnnouncements();
+        alert('✅ Anuncios cargados. Puedes editarlos y exportarlos de nuevo.');
+      } catch (e) {
+        alert('❌ El archivo no tiene el formato esperado.');
+      }
+    };
+    reader.readAsText(file);
+  }
+
   /* ---------------- Init ---------------- */
 
   function initAdmin() {
     loadConfigForm();
     renderSeries();
+    $('btn-add-ann').addEventListener('click', addAnnouncement);
+    $('btn-export-ann').addEventListener('click', exportAnnouncements);
+    $('btn-load-ann').addEventListener('click', function () { $('ann-file-input').click(); });
+    $('ann-file-input').addEventListener('change', function () {
+      if (this.files.length) loadAnnouncementsFile(this.files[0]);
+    });
+    fetchAnnouncements();
   }
 
   function init() {
