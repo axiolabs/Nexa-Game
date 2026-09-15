@@ -45,6 +45,18 @@ var Store = (function () {
     return s;
   }
 
+  function cloudinaryDefaults() {
+    try {
+      var raw = localStorage.getItem('gts_cloudinary');
+      if (raw) {
+        var c = JSON.parse(raw);
+        if (c && c.cloudName && c.preset) return c;
+      }
+    } catch (e) {}
+    // cuentas públicas por diseño (unsigned preset = no requiere secret)
+    return { cloudName: 'ju6a1xcy', preset: 'gts_unsigned' };
+  }
+
   return {
     DEFAULT_CONFIG: DEFAULT_CONFIG,
 
@@ -197,12 +209,7 @@ var Store = (function () {
     // ---------- Cloudinary ----------
 
     getCloudinary: function () {
-      try {
-        var raw = localStorage.getItem('gts_cloudinary');
-        var c = raw ? JSON.parse(raw) : null;
-        if (c && c.cloudName && c.preset) return c;
-      } catch (e) {}
-      return null;
+      return cloudinaryDefaults();
     },
     setCloudinary: function (creds) {
       try { localStorage.setItem('gts_cloudinary', JSON.stringify(creds)); } catch (e) {}

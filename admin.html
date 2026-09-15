@@ -84,7 +84,8 @@
           </label>
           <div></div>
         </div>
-        <p class="hint" style="margin-top:8px">La <b>Service Role Key</b> nunca se envía a los jugadores. Está almacenada solo en este navegador. En Supabase Dashboard → Project Settings → API.</p>
+        <p class="hint" style="margin-top:8px">Guarda los datos compartidos de tu proyecto. La <b>publishable key</b> es pública (los jugadores leen y registran su puntaje). La <b>Secret/Service Key</b> es secreta y solo vive en este navegador para que el admin pueda guardar series, config y anuncios. En Supabase Dashboard → Project Settings → API.</p>
+        <p class="hint" id="sb-hint-fill" style="margin-top:8px">🔎 Ya viene precargado con tu proyecto y publishable key.</p>
         <div class="pw-section" style="border-top:none;margin-top:10px;padding-top:0">
           <button class="btn btn-primary" id="btn-sb-connect">🔗 Conectar</button>
           <button class="btn btn-danger" id="btn-sb-disconnect" style="margin-left:10px">Desconectar</button>
@@ -112,6 +113,7 @@
           </label>
         </div>
         <p class="hint" style="margin-top:8px">Cómo crearlo: Cloudinary Dashboard → <b>Settings</b> → <b>Upload</b> → <b>Upload presets</b> → <b>Add upload preset</b>, marca <b>unsigned</b> y define límites (formatos permitidos, tamaño máx.). El preset te permite subir imágenes sin exponer tu API Secret.</p>
+        <p class="hint" id="cd-hint-fill" style="margin-top:8px">🎯 Ya viene precargado con tu cuenta <code>ju6a1xcy</code> y el preset <code>gts_unsigned</code> (creado y probado). Puedes usarlo tal cual.</p>
         <div class="pw-section" style="border-top:none;margin-top:10px;padding-top:0">
           <button class="btn btn-primary" id="btn-cd-save">💾 Guardar configuración</button>
           <button class="btn btn-danger" id="btn-cd-clear" style="margin-left:10px">Quitar config</button>

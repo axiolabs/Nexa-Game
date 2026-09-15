@@ -2,6 +2,16 @@ var Admin = (function () {
 
   function $(id) { return document.getElementById(id); }
 
+  var sbStoredConfig = null; // creeds guardadas por el admin (si existen)
+
+  function initSupabasePrefill() {
+    try {
+      var raw = localStorage.getItem('gts_supabase');
+      sbStoredConfig = (raw && /"_default"|_default/.test(raw) === false) ? JSON.parse(raw) : null;
+      if (sbStoredConfig && !sbStoredConfig.url) sbStoredConfig = null;
+    } catch (e) { sbStoredConfig = null; }
+  }
+
   function readImages(file) {
     return new Promise(function (resolve, reject) {
       var reader = new FileReader();
@@ -358,12 +368,14 @@ var Admin = (function () {
     var el = $('cloudinary-status');
     var c = Store.getCloudinary();
     if (c) {
-      el.innerHTML = '✅ Configurado: <code>' + c.cloudName + '</code> · preset <code>' + c.preset + '</code>. Las imágenes nuevas se subirán a Cloudinary como URLs públicas.';
+      el.innerHTML = '✅ Activo: <code>' + c.cloudName + '</code> · preset <code>' + c.preset + '</code>. Las imágenes nuevas se subirán a Cloudinary como URLs públicas.';
       $('cd-cloud').value = c.cloudName;
       $('cd-preset').value = c.preset;
     } else {
-      el.textContent = 'No configurado. Las imágenes se guardan en el navegador (base64). Para imágenes sin límite de espacio, configura Cloudinary.';
+      el.innerHTML = 'No configurado. Las imágenes se guardan en el navegador (base64). Para imágenes sin límite de espacio, configura Cloudinary.';
     }
+    var o = document.getElementById('cd-hint-fill');
+    if (o) o.style.display = (c && c.cloudName === 'ju6a1xcy' && c.preset === 'gts_unsigned') ? '' : 'none';
   }
 
   function saveCloudinary() {
@@ -377,14 +389,15 @@ var Admin = (function () {
 
   function clearCloudinary() {
     Store.clearCloudinary();
-    $('cd-cloud').value = '';
-    $('cd-preset').value = '';
-    cdMsg('🗑 Configuración de Cloudinary eliminada.');
+    cdMsg('🗑 Se usará la configuración por defecto de la cuenta.');
     loadCloudinaryStatus();
   }
 
   function testCloudinary() {
-    if (!Store.getCloudinary()) { cdMsg('❌ Guarda la configuración primero.', true); return; }
+    var cloud = $('cd-cloud').value.trim() || (Store.getCloudinary() && Store.getCloudinary().cloudName);
+    var preset = $('cd-preset').value.trim() || (Store.getCloudinary() && Store.getCloudinary().preset);
+    if (!cloud || !preset) { cdMsg('❌ Ingresa el Cloud Name y el Upload Preset primero.', true); return; }
+    Store.setCloudinary({ cloudName: cloud, preset: preset });
     cdMsg('Probando subida...');
     var svg = new Blob(['<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#00ff00"/></svg>'], { type: 'image/svg+xml' });
     var file = new File([svg], 'test.svg', { type: 'image/svg+xml' });
@@ -393,7 +406,7 @@ var Admin = (function () {
         cdMsg('✅ Subida de prueba OK: ' + url);
       })
       .catch(function (e) {
-        cdMsg('❌ Falló la subida de prueba: ' + (e.message || e), true);
+        cdMsg('❌ Falló la subida de prueba (' + cloud + '/' + preset + '): ' + (e.message || e), true);
       });
   }
 
@@ -523,26 +536,35 @@ var Admin = (function () {
 
   function loadSupabaseStatus() {
     var el = $('supabase-status');
-    if (Supabase.isConfigured()) {
-      var creds = Supabase.getCreds();
-      el.innerHTML = '✅ Conectado: <code>' + (creds.url || '').replace(/^https?:\/\//, '') + '</code>' +
-        (creds.serviceKey ? ' · modo admin activo' : ' · ⚠ sin Service Key (no se pueden guardar cambios)');
-      $('sb-url').value = creds.url || '';
-      $('sb-anon').value = creds.anonKey || '';
-      $('sb-service').value = creds.serviceKey || '';
+    var d = Supabase.getDefaults();
+    var serviceOk = Supabase.hasAdminWrite();
+    el.innerHTML = '⚡ Los jugadores ya leen los datos compartidos automáticamente (publishable key).<br>' +
+      (serviceOk
+        ? '✅ Service/Secret Key activa: el admin puede guardar series, config y anuncios en la nube.'
+        : '⚠ Sin Secret/Service Key: el admin aún NO puede escribir en la nube. Agrégala abajo para guardar cambios.');
+
+    if (!sbStoredConfig) {
+      $('sb-url').value = d.url;
+      $('sb-anon').value = d.anonKey;
     } else {
-      el.textContent = 'No conectado. Los datos son locales por ahora.';
+      $('sb-url').value = sbStoredConfig.url || d.url;
+      $('sb-anon').value = sbStoredConfig.anonKey || d.anonKey;
     }
+    $('sb-service').value = sbStoredConfig ? (sbStoredConfig.serviceKey || '') : (d.serviceKey || '');
+    var hint = document.getElementById('sb-hint-fill');
+    if (hint) hint.style.display = sbStoredConfig ? 'none' : '';
   }
 
   function connectSupabase() {
     var url = $('sb-url').value.trim();
     var anon = $('sb-anon').value.trim();
     var service = $('sb-service').value.trim();
-    if (!url || !anon) { sbMsg('❌ Ingresa la Project URL y la Anonymous Key.', true); return; }
-    Supabase.setCreds({ url: url, anonKey: anon, serviceKey: service || '' });
+    if (!url || !anon) { sbMsg('❌ Ingresa la Project URL y la publishable/anonymous key.', true); return; }
+    Supabase.setCreds({ url: url, anonKey: anon, serviceKey: service || '', _default: false });
+    initSupabasePrefill();
     btnSbBusy(true);
-    Supabase.testConnection('anon')
+    var connMode = service ? 'admin' : 'anon';
+    Supabase.testConnection(connMode)
       .then(function () {
         sbMsg('✅ Conexión OK. Descargando datos compartidos...');
         return Store.syncFromCloud();
@@ -569,8 +591,9 @@ var Admin = (function () {
   }
 
   function disconnectSupabase() {
-    if (!confirm('¿Desconectar Supabase? Volverás a modo local.')) return;
+    if (!confirm('¿Quitar la configuración guardada de Supabase? Los jugadores seguirán leyendo los datos públicos por defecto, pero el admin volverá a necesitar ingresar las claves para escribir.')) return;
     Supabase.clearCreds();
+    initSupabasePrefill();
     sbMsg('');
     loadSupabaseStatus();
     renderSeries();
@@ -580,7 +603,8 @@ var Admin = (function () {
     var url = $('sb-url').value.trim();
     var anon = $('sb-anon').value.trim();
     var service = $('sb-service').value.trim();
-    Supabase.setCreds({ url: url, anonKey: anon, serviceKey: service || '' });
+    Supabase.setCreds({ url: url, anonKey: anon, serviceKey: service || '', _default: false });
+    initSupabasePrefill();
     btnSbBusy(true);
     var p;
     if (service) {
@@ -619,6 +643,7 @@ var Admin = (function () {
   /* ---------------- Init ---------------- */
 
   function initAdmin() {
+    initSupabasePrefill();
     loadConfigForm();
     renderSeries();
     $('btn-add-ann').addEventListener('click', addAnnouncement);

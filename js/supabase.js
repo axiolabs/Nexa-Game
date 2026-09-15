@@ -4,16 +4,29 @@
 //  - service key: escrituras del admin (series, config, anuncios, storage)
 var Supabase = (function () {
 
+  // Valores públicos por diseño (reader/anon). El admin puede sobrescribirlos
+  // desde el panel y completar la secret key para escrituras.
+  var FALLBACK = {
+    url: 'https://kxlnysvtuoxykdygmzxs.supabase.co',
+    anonKey: 'sb_publishable_BUHDoCw3jWag9k-PlvnvZg_HgQ9Wiq5',
+    serviceKey: ''
+  };
+
   // ---------- Credenciales ----------
-  // Se guardan SOLO en el navegador del admin.
+  // Se guardan SOLO en el navegador del admin (nunca viajan al público).
   function getCreds() {
     try {
       var raw = localStorage.getItem('gts_supabase');
-      if (!raw) return null;
-      var c = JSON.parse(raw);
-      if (c && c.url && c.anonKey) return c;
+      if (raw) {
+        var c = JSON.parse(raw);
+        if (c && c.url && c.anonKey && !c._default) return c;
+      }
     } catch (e) {}
-    return null;
+    return { url: FALLBACK.url, anonKey: FALLBACK.anonKey, serviceKey: FALLBACK.serviceKey || '' };
+  }
+
+  function getDefaults() {
+    return { url: FALLBACK.url, anonKey: FALLBACK.anonKey, serviceKey: FALLBACK.serviceKey || '' };
   }
 
   function setCreds(creds) {
@@ -28,6 +41,12 @@ var Supabase = (function () {
     return !!getCreds();
   }
 
+  // ¿el admin guardó su propia config con service key?
+  function hasAdminWrite() {
+    var c = getCreds();
+    return !!(c && c.serviceKey);
+  }
+
   // key según modo: anon (público) o service (admin)
   function effectiveKey(mode) {
     var c = getCreds();
@@ -38,6 +57,9 @@ var Supabase = (function () {
   function request(method, path, body, mode, headersExtra) {
     var c = getCreds();
     if (!c) return Promise.reject(new Error('Supabase no configurado'));
+    if (mode === 'admin' && !c.serviceKey) {
+      return Promise.reject(new Error('Falta la Secret/Service Key. Agrégala en el panel (Project Settings → API).'));
+    }
     var api = c.url.replace(/\/$/, '');
     var key = effectiveKey(mode || 'anon');
     var headers = {
@@ -225,9 +247,11 @@ var Supabase = (function () {
 
   return {
     getCreds: getCreds,
+    getDefaults: getDefaults,
     setCreds: setCreds,
     clearCreds: clearCreds,
     isConfigured: isConfigured,
+    hasAdminWrite: hasAdminWrite,
     request: request,
     fetchSeries: fetchSeries,
     fetchConfig: fetchConfig,
