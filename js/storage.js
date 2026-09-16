@@ -38,6 +38,7 @@ var Store = (function () {
 
   function normalize(s) {
     s.imagenes = s.imagenes || [];
+    s.variantes = s.variantes || [];
     s.imagenes.forEach(function (im, k) {
       if (typeof im.posicion === 'undefined') im.posicion = k + 1;
       if (typeof im.dificultad === 'undefined') im.dificultad = Math.min(k + 1, 5);

@@ -269,6 +269,7 @@ var G = (function () {
     var s = state.queue[state.ronda];
     state.current = s;
     state.answer = s.nombre;
+    state.answerVariants = (s.variantes || []);
 
     // elegir lista de imágenes válidas para la ronda
     var range = DIFF_RANGES[state.diff];
@@ -405,17 +406,31 @@ var G = (function () {
   function renderOptions(s, range) {
     var grid = $('options-grid');
     grid.innerHTML = '';
-    var correct = s.nombre;
-    var pool = Store.getSeries()
+    // distractores: cada serie puede presentarse con su nombre o una variante al azar
+    var distractorLabels = Store.getSeries()
       .filter(function (x) { return x.id !== s.id; })
-      .map(function (x) { return x.nombre; });
-    pool = shuffle(pool);
-    var opts = [correct];
-    for (var i = 0; i < pool.length && opts.length < 4; i++) {
-      if (opts.indexOf(pool[i]) === -1) opts.push(pool[i]);
-    }
-    while (opts.length < 4) opts.push('________');
+      .map(function (x) {
+        var names = [x.nombre].concat(x.variantes || []);
+        return names[Math.floor(Math.random() * names.length)];
+      });
+    var seen = {};
+    var opts = [];
+    distractorLabels.forEach(function (label) {
+      var key = normalize(label);
+      if (!seen[key]) { seen[key] = true; opts.push(label); }
+    });
     opts = shuffle(opts);
+    while (opts.length > 3) opts.pop();
+
+    // opción correcta: también puede mostrar una variante
+    var correctNames = [s.nombre].concat(s.variantes || []);
+    var correct = correctNames[Math.floor(Math.random() * correctNames.length)];
+    if (seen[normalize(correct)]) correct = s.nombre;
+    seen[normalize(correct)] = true;
+
+    opts.push(correct);
+    opts = shuffle(opts);
+    while (opts.length < 4) opts.push('________');
     opts.forEach(function (name) {
       var b = document.createElement('button');
       b.className = 'option-btn';
@@ -494,16 +509,29 @@ var G = (function () {
 
   /* ---------------- Respuestas ---------------- */
 
+  function normalize(s) {
+    return ('' + s).toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/&/g, ' y ')
+      .replace(/[^a-z0-9 ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
   function answer(btn, name) {
     if (state.settled) return;
     state.settled = true;
     clearTimers();
     clearContraTimer();
 
-    var correct = (name === state.answer);
+    var correct = normalize(name) === normalize(state.answer) ||
+      state.answerVariants.some(function (v) { return normalize(v) === normalize(name); });
     document.querySelectorAll('.option-btn').forEach(function (b, i) {
       b.disabled = true;
-      if (b.textContent === state.answer) b.classList.add('right');
+      if (normalize(b.textContent) === normalize(state.answer) ||
+          state.answerVariants.some(function (v) { return normalize(v) === normalize(b.textContent); })) {
+        b.classList.add('right');
+      }
     });
     if (!correct) btn.classList.add('wrong');
 

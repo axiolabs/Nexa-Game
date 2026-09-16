@@ -111,6 +111,31 @@ var Admin = (function () {
 
   /* ---------------- Series ---------------- */
 
+  function parseVariantes(str) {
+    var v = (str || '').split(',')
+      .map(function (x) { return x.trim(); })
+      .filter(function (x) { return x.length > 0; });
+    return v;
+  }
+
+  function varTagBadges(s, container) {
+    container.innerHTML = '';
+    var vars = s.variantes || [];
+    if (vars.length === 0) {
+      var none = document.createElement('span');
+      none.className = 'badge badge-ghost';
+      none.textContent = 'sin variantes';
+      container.appendChild(none);
+      return;
+    }
+    vars.forEach(function (v) {
+      var b = document.createElement('span');
+      b.className = 'badge badge-var';
+      b.textContent = v;
+      container.appendChild(b);
+    });
+  }
+
   function addSerie() {
     var nombre = $('serie-nombre').value.trim();
     if (!nombre) { $('serie-nombre').focus(); return; }
@@ -118,12 +143,14 @@ var Admin = (function () {
       id: Store.uid(),
       nombre: nombre,
       categoria: $('serie-categoria').value,
+      variantes: parseVariantes($('serie-variantes').value),
       imagenes: []
     };
     var series = Store.getSeries();
     series.push(serie);
     Store.saveSeries(series);
     $('serie-nombre').value = '';
+    $('serie-variantes').value = '';
     renderSeries();
   }
 
@@ -225,6 +252,33 @@ var Admin = (function () {
       headInfo.appendChild(spanName);
       headInfo.appendChild(spanCat);
       head.appendChild(headInfo);
+
+      var variantesRow = document.createElement('div');
+      variantesRow.className = 'serie-variantes';
+      var varTags = document.createElement('div');
+      varTagBadges(s, varTags);
+      var varEdit = document.createElement('input');
+      varEdit.type = 'text';
+      varEdit.value = (s.variantes || []).join(', ');
+      varEdit.placeholder = 'Variantes (coma)';
+      varEdit.className = 'variantes-input';
+      varEdit.title = 'Edita las variantes y pulsa Guardar';
+      var varBtn = document.createElement('button');
+      varBtn.className = 'btn btn-primary btn-sm';
+      varBtn.textContent = 'Guardar variantes';
+      varBtn.addEventListener('click', function () {
+        var series = Store.getSeries();
+        var idx = series.findIndex(function (x) { return x.id === s.id; });
+        if (idx >= 0) {
+          series[idx].variantes = parseVariantes(varEdit.value);
+          Store.saveSeries(series);
+          renderSeries();
+        }
+      });
+      variantesRow.appendChild(varTags);
+      variantesRow.appendChild(varEdit);
+      variantesRow.appendChild(varBtn);
+      head.appendChild(variantesRow);
 
       var actions = document.createElement('div');
       actions.className = 'serie-actions';

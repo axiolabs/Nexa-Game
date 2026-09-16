@@ -197,6 +197,44 @@ body {
 }
 .serie-actions { display: flex; gap: 8px; }
 
+.serie-variantes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 0;
+}
+.serie-variantes .badge { font-size: 12px; }
+.badge-ghost {
+  color: var(--dim);
+  background: transparent;
+  border: 1px dashed rgba(255,255,255,.2);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+.badge-var {
+  background: rgba(64,196,255,.12);
+  border: 1px solid rgba(64,196,255,.35);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+}
+.variantes-input {
+  flex: 1;
+  min-width: 160px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--card-bor);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  font-size: 13px;
+}
+.variantes-input::placeholder { color: var(--dim); }
+#serie-variantes { margin-top: 6px; }
+
 .img-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .img-card {
   background: rgba(255,255,255,.04);

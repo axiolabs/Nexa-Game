@@ -20,6 +20,7 @@ function createSeedSeries() {
     {
       nombre: 'Rick y Morty',
       categoria: 'Animada',
+      variantes: ['Rick & Morty', 'Rick and Morty'],
       imagenes: [
         { data: seedSVG('Portal', '#1b8a5a', '#0e3d2a'), dificultad: 1 },
         { data: seedSVG('Nave', '#4a1b8a', '#1b0e3d'), dificultad: 2 },
@@ -31,6 +32,7 @@ function createSeedSeries() {
     {
       nombre: 'One Piece',
       categoria: 'Anime',
+      variantes: ['One Piece (anime)'],
       imagenes: [
         { data: seedSVG('Sombrero', '#d44032', '#6e1512'), dificultad: 1 },
         { data: seedSVG('Quilla', '#2e6e42', '#12391c'), dificultad: 2 },
@@ -42,6 +44,7 @@ function createSeedSeries() {
     {
       nombre: 'The Last of Us',
       categoria: 'Videojuego',
+      variantes: ['TLOU', 'The Last of Us Part I'],
       imagenes: [
         { data: seedSVG('Hongo', '#7a9c5a', '#2a3d1b'), dificultad: 1 },
         { data: seedSVG('Cuarzo', '#5a8a9c', '#1b2a3d'), dificultad: 2 },
@@ -53,6 +56,7 @@ function createSeedSeries() {
     {
       nombre: 'Breaking Bad',
       categoria: 'Live-action',
+      variantes: ['Br Ba'],
       imagenes: [
         { data: seedSVG('RV', '#c9c9c9', '#4a4a3d'), dificultad: 1 },
         { data: seedSVG('Verdes', '#6a8a5a', '#2e3d24'), dificultad: 2 },
@@ -67,6 +71,7 @@ function createSeedSeries() {
       id: Store.uid(),
       nombre: s.nombre,
       categoria: s.categoria,
+      variantes: s.variantes || [],
       imagenes: s.imagenes.map(function (im, k) {
         return { data: im.data, dificultad: im.dificultad, posicion: k + 1 };
       })

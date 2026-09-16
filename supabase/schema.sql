@@ -18,6 +18,9 @@ create table if not exists public.series (
   creado_en timestamptz default now()
 );
 
+-- Variantes de nombre de cada serie (los jugadores aciertan con cualquiera)
+alter table public.series add column if not exists variantes text[] not null default '{}';
+
 -- Imágenes de cada serie
 create table if not exists public.imagenes (
   id uuid primary key default gen_random_uuid(),

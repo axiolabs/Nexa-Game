@@ -83,7 +83,7 @@ var Supabase = (function () {
   // ===================== LECTURA PÚBLICA (anon) =====================
 
   function fetchSeries() {
-    return request('GET', '/rest/v1/series?select=id,nombre,categoria,imagenes(id,ruta,dificultad,posicion)&order=creado_en.asc')
+    return request('GET', '/rest/v1/series?select=id,nombre,categoria,variantes,imagenes(id,ruta,dificultad,posicion)&order=creado_en.asc')
       .then(function (rows) {
         rows = rows || [];
         return rows.map(function (r) {
@@ -91,6 +91,7 @@ var Supabase = (function () {
             id: r.id,
             nombre: r.nombre,
             categoria: r.categoria,
+            variantes: r.variantes || [],
             imagenes: (r.imagenes || []).map(function (im) {
               return { data: im.ruta, dificultad: im.dificultad, posicion: im.posicion };
             })
@@ -153,7 +154,7 @@ var Supabase = (function () {
   }
 
   function upsertSerie(serie) {
-    var payload = { id: serie.id, nombre: serie.nombre, categoria: serie.categoria };
+    var payload = { id: serie.id, nombre: serie.nombre, categoria: serie.categoria, variantes: serie.variantes || [] };
     return syncImagesToCloud(serie).then(function (imagenes) {
       return request('POST', '/rest/v1/series?on_conflict=id', payload, 'admin', { 'Prefer': 'resolution=merge-duplicates' })
         .then(function () {
