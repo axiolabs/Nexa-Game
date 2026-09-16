@@ -146,7 +146,9 @@ var Supabase = (function () {
   }
 
   function saveSeries(series) {
-    var tasks = (series || []).map(upsertSerie);
+    var tasks = (series || []).map(function (s) {
+      return Promise.resolve().then(function () { return upsertSerie(s); });
+    });
     return Promise.all(tasks);
   }
 
@@ -188,12 +190,31 @@ var Supabase = (function () {
   }
 
   // ------------------- Storage (imágenes) -------------------
+  // Las imágenes se guardan tal cual en `imagenes.ruta`: pueden ser una URL
+  // pública de Cloudinary o una data URI (SVG demo). Ambas se renderizan
+  // directamente en el juego, por lo que no es necesario subirlas al bucket.
 
   function uploadImage(dataUri, name) {
     var c = getCreds();
     if (!c) return Promise.reject(new Error('Supabase no configurado'));
+    var parts = (dataUri || '').split(',');
+    if (parts.length < 2) return Promise.reject(new Error('Data URI inválida'));
     var api = c.url.replace(/\/$/, '');
-    var byteString = atob(dataUri.split(',')[1]);
+    var payload = parts[1];
+    var byteString;
+    if (/;base64/i.test(parts[0])) {
+      try {
+        byteString = atob(payload);
+      } catch (e) {
+        return Promise.reject(new Error('La imagen no es base64 válido'));
+      }
+    } else {
+      try {
+        byteString = decodeURIComponent(payload);
+      } catch (e) {
+        byteString = payload;
+      }
+    }
     var mime = (dataUri.match(/^data:([^;]+);/) || [])[1] || 'image/png';
     var ab = new ArrayBuffer(byteString.length);
     var ia = new Uint8Array(ab);
@@ -219,19 +240,13 @@ var Supabase = (function () {
     });
   }
 
-  // Convierte las imágenes dataURI locales de una serie a URLs de la nube
+  // Devuelve las imágenes de una serie listas para insertar en `imagenes`.
+  // Las data URIs y URLs se guardan directamente en `ruta` (sin subir al bucket).
   function syncImagesToCloud(serie) {
-    var tasks = (serie.imagenes || []).map(function (im, k) {
-      if ((im.data || '').indexOf('data:') === 0) {
-        return uploadImage(im.data, slug(serie.nombre) + '_' + (k + 1));
-      }
-      return Promise.resolve(im.data);
+    var imgs = (serie.imagenes || []).map(function (im, k) {
+      return { data: im.data || '', dificultad: im.dificultad, posicion: im.posicion || k + 1 };
     });
-    return Promise.all(tasks).then(function (urls) {
-      return (serie.imagenes || []).map(function (im, k) {
-        return { data: urls[k], dificultad: im.dificultad, posicion: im.posicion || k + 1 };
-      });
-    });
+    return Promise.resolve(imgs);
   }
 
   function slug(s) {
