@@ -238,7 +238,19 @@ var G = (function () {
       pool = series.slice();
     }
     if (pool.length < 1) return [];
-    return shuffle(pool).slice(0, state.rondas);
+    // Cola 100% aleatoria: si hay menos series que rondas configuradas,
+    // se repiten series (sin la misma dos veces seguidas) para completar
+    // la partida. El orden es distinto en cada partida.
+    var queue = [];
+    var lastId = null;
+    while (queue.length < state.rondas) {
+      var cand = pool.filter(function (s) { return s.id !== lastId; });
+      if (!cand.length) cand = pool;
+      var pick = cand[Math.floor(Math.random() * cand.length)];
+      queue.push(pick);
+      lastId = pick.id;
+    }
+    return queue;
   }
 
   function startGame(diff) {
@@ -298,8 +310,10 @@ var G = (function () {
     if (state.mode === 'galeria') {
       // ordenar por dificultad ascendente: las más difíciles de adivinar salen primero
       fotos.sort(function (a, b) { return a.dificultad - b.dificultad; });
+      // subconjunto aleatorio de hasta 5 imágenes válidas para que la ronda varíe
       var take = Math.min(fotos.length, 5);
-      fotos = fotos.slice(0, take);
+      fotos = shuffle(fotos).slice(0, take);
+      fotos.sort(function (a, b) { return a.dificultad - b.dificultad; });
       state.maxRevealImgs = fotos.length;
       state.revealedImgs = 1;
       state.imgIndex = null;
