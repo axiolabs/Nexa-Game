@@ -42,7 +42,7 @@
         <div class="mode-card" data-mode="clasico">
           <div class="mode-icon">🌫️</div>
           <h3>Clásico Blur</h3>
-          <p>La imagen empieza borrosa y se va enfocando. Adivina lo antes posible.</p>
+          <p>La imagen empieza borrosa. Tú eliges cuánto enfocar con el botón. Menos enfoque = más puntos.</p>
           <span class="mode-tag">+100 pts máx.</span>
         </div>
         <div class="mode-card" data-mode="galeria">
@@ -54,7 +54,7 @@
         <div class="mode-card" data-mode="contrarreloj">
           <div class="mode-icon">⏱️</div>
           <h3>Contrarreloj</h3>
-          <p>El blur avanza solo si el tiempo te da. Respuesta penalizada por velocidad.</p>
+          <p>El tiempo apremia. Enfoca con el botón y responde escribiendo el nombre.</p>
           <span class="mode-tag">Tiempo límite</span>
         </div>
         <div class="mode-card" data-mode="supervivencia">
@@ -118,6 +118,9 @@
         <div class="img-reveal hidden" id="img-single"></div>
         <div class="step-tags" id="step-tags"></div>
         <div class="blur-note" id="blur-note"></div>
+        <div class="focus-row" id="focus-row">
+          <button class="btn btn-ghost" id="btn-focus">🔍 Enfocar</button>
+        </div>
       </div>
 
       <!-- Modo Galería: hasta 5 imágenes -->
@@ -134,7 +137,12 @@
     </div>
 
     <div class="answer-zone">
-      <div class="options-grid" id="options-grid"></div>
+      <div class="answer-input-row" id="answer-input-row">
+        <input type="text" id="answer-input" maxlength="40"
+               placeholder="Escribe el nombre de la serie…" autocomplete="off" list="series-suggest">
+        <datalist id="series-suggest"></datalist>
+        <button class="btn btn-primary" id="btn-answer">Responder</button>
+      </div>
       <div class="msg-box hidden" id="msg-box"></div>
       <div class="answer-row hidden" id="answer-row">
         <button class="btn btn-ghost" id="btn-reveal">Mostrar respuesta</button>

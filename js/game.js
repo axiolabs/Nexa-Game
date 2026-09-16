@@ -96,6 +96,11 @@ var G = (function () {
 
     $('btn-resume').addEventListener('click', resumeGame);
     $('btn-round-next').addEventListener('click', nextRound);
+    $('btn-focus').addEventListener('click', focusMore);
+    $('btn-answer').addEventListener('click', answer);
+    $('answer-input').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') answer();
+    });
 
     $('lightbox-close').addEventListener('click', closeLightbox);
     document.querySelector('.lightbox-bg').addEventListener('click', closeLightbox);
@@ -300,7 +305,7 @@ var G = (function () {
       renderSingle(fotos[state.imgIndex].data);
     }
 
-    renderOptions(s, range);
+    renderAnswerInput();
     renderHUD();
     startReveal();
     saveSnapshot();
@@ -367,6 +372,7 @@ var G = (function () {
     else if (px > 0) note = '🔍 Casi la tienes…';
     else note = '✨ Imagen revelada';
     $('blur-note').textContent = note;
+    $('btn-focus').disabled = state.blurStep >= BLUR_STEPS.length - 1;
     // pasos
     var totalSteps = BLUR_STEPS.length;
     var tags = $('step-tags');
@@ -423,43 +429,33 @@ var G = (function () {
     }
   }
 
-  /* ---------------- Opciones ---------------- */
+  /* ---------------- Respuesta por texto ---------------- */
 
-  function renderOptions(s, range) {
-    var grid = $('options-grid');
-    grid.innerHTML = '';
-    // distractores: cada serie puede presentarse con su nombre o una variante al azar
-    var distractorLabels = Store.getSeries()
-      .filter(function (x) { return x.id !== s.id; })
-      .map(function (x) {
-        var names = [x.nombre].concat(x.variantes || []);
-        return names[Math.floor(Math.random() * names.length)];
-      });
+  function renderAnswerInput() {
+    var input = $('answer-input');
+    input.value = '';
+    input.classList.remove('right', 'wrong');
+    input.disabled = false;
+    $('answer-input-row').classList.remove('hidden');
+    $('msg-box').classList.add('hidden');
+    $('answer-row').classList.add('hidden');
+    $('btn-answer').disabled = false;
+    // sugerencias de autocompletado con nombres y variantes de todas las series
+    var dl = $('series-suggest');
+    dl.innerHTML = '';
     var seen = {};
-    var opts = [];
-    distractorLabels.forEach(function (label) {
-      var key = normalize(label);
-      if (!seen[key]) { seen[key] = true; opts.push(label); }
+    Store.getSeries().forEach(function (s) {
+      var names = [s.nombre].concat(s.variantes || []);
+      names.forEach(function (n) {
+        var key = normalize(n);
+        if (seen[key]) return;
+        seen[key] = true;
+        var opt = document.createElement('option');
+        opt.value = n;
+        dl.appendChild(opt);
+      });
     });
-    opts = shuffle(opts);
-    while (opts.length > 3) opts.pop();
-
-    // opción correcta: también puede mostrar una variante
-    var correctNames = [s.nombre].concat(s.variantes || []);
-    var correct = correctNames[Math.floor(Math.random() * correctNames.length)];
-    if (seen[normalize(correct)]) correct = s.nombre;
-    seen[normalize(correct)] = true;
-
-    opts.push(correct);
-    opts = shuffle(opts);
-    while (opts.length < 4) opts.push('________');
-    opts.forEach(function (name) {
-      var b = document.createElement('button');
-      b.className = 'option-btn';
-      b.textContent = name;
-      b.addEventListener('click', function () { answer(b, name); });
-      grid.appendChild(b);
-    });
+    if (state.mode !== 'galeria') input.focus();
   }
 
   /* ---------------- Revelación progresiva ---------------- */
@@ -478,19 +474,17 @@ var G = (function () {
       state.timers.push(t);
       if (state.mode === 'contrarreloj') startContraTimer();
     } else {
+      // enfoque manual: el jugador presiona "Enfocar" para enfocar paso a paso
       applyBlur();
-      var t2 = setInterval(function () {
-        if (state.settled) { clearInterval(t2); return; }
-        state.blurStep++;
-        applyBlur();
-        if (state.blurStep >= BLUR_STEPS.length - 1) {
-          clearInterval(t2);
-          if (state.mode === 'contrarreloj') clearContraTimer();
-        }
-      }, stepInterval());
-      state.timers.push(t2);
       if (state.mode === 'contrarreloj') startContraTimer();
     }
+  }
+
+  function focusMore() {
+    if (state.settled) return;
+    if (state.blurStep >= BLUR_STEPS.length - 1) return;
+    state.blurStep++;
+    applyBlur();
   }
 
   function stepInterval() {
@@ -540,22 +534,21 @@ var G = (function () {
       .trim();
   }
 
-  function answer(btn, name) {
+  function answer() {
     if (state.settled) return;
+    var input = $('answer-input');
+    var name = input.value.trim();
+    if (!name) { input.focus(); return; }
     state.settled = true;
     clearTimers();
     clearContraTimer();
 
     var correct = normalize(name) === normalize(state.answer) ||
       state.answerVariants.some(function (v) { return normalize(v) === normalize(name); });
-    document.querySelectorAll('.option-btn').forEach(function (b, i) {
-      b.disabled = true;
-      if (normalize(b.textContent) === normalize(state.answer) ||
-          state.answerVariants.some(function (v) { return normalize(v) === normalize(b.textContent); })) {
-        b.classList.add('right');
-      }
-    });
-    if (!correct) btn.classList.add('wrong');
+
+    input.disabled = true;
+    $('btn-answer').disabled = true;
+    input.classList.add(correct ? 'right' : 'wrong');
 
     if (correct) {
       state.aciertos++;

@@ -414,28 +414,36 @@ body {
   max-width: 720px;
   margin: 0 auto;
 }
-.options-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+.answer-input-row {
+  display: flex;
   gap: 10px;
 }
-.option-btn {
-  cursor: pointer;
+.answer-input-row input {
+  flex: 1;
   background: var(--card);
-  border: 1px solid var(--card-bor);
+  border: 1.5px solid var(--card-bor);
   color: var(--text);
   border-radius: 12px;
-  padding: 14px 12px;
-  font-size: 15px;
+  padding: 13px 16px;
+  font-size: 16px;
   font-family: inherit;
-  transition: transform .12s, border-color .12s, background .12s;
-  text-align: left;
+  outline: none;
+  transition: border-color .12s, background .12s;
 }
-.option-btn:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--accent); }
-.option-btn:disabled { cursor: default; opacity: .85; }
-.option-btn.right { background: rgba(52, 211, 153, .18); border-color: var(--good); }
-.option-btn.wrong { background: rgba(248, 113, 113, .18); border-color: var(--bad); }
-.option-btn.revealed-right { background: rgba(52, 211, 153, .18); border-color: var(--good); }
+.answer-input-row input::placeholder { color: var(--dim); }
+.answer-input-row input:focus { border-color: var(--accent); }
+.answer-input-row input.right { border-color: var(--good); background: rgba(52,211,153,.12); }
+.answer-input-row input.wrong { border-color: var(--bad); background: rgba(248,113,113,.12); }
+.answer-input-row input:disabled { opacity: .75; }
+.answer-input-row .btn { white-space: nowrap; }
+
+.focus-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+.focus-row .btn { font-size: 15px; }
+.focus-row .btn:disabled { opacity: .4; cursor: default; }
 
 .msg-box {
   margin-top: 14px;
@@ -532,8 +540,8 @@ body {
 /* ---------- Responsive ---------- */
 @media (max-width: 560px) {
   .panel { padding: 22px 16px; }
-  .options-grid { grid-template-columns: 1fr 1fr; }
-  .option-btn { font-size: 13px; padding: 12px 8px; }
+  .answer-input-row { flex-direction: column; }
+  .answer-input-row .btn { width: 100%; }
   .gallery-grid { grid-template-columns: repeat(3, 1fr); }
   .end-value { font-size: 46px; }
 }
