@@ -15,6 +15,9 @@ function seedSVG(text, color1, color2) {
 }
 
 function createSeedSeries() {
+  // NUNCA sembrar en nube: eso hace reemplazo total y borraría el catálogo
+  // real compartido. El seed solo aplica a instalaciones 100% locales.
+  if (Store.useCloud()) return;
   if (Store.getSeries().length > 0) return;
   var base = [
     {
