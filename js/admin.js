@@ -699,6 +699,15 @@ var Admin = (function () {
     initSupabasePrefill();
     loadConfigForm();
     renderSeries();
+    // La nube es la fuente de verdad: al abrir el panel y tras guardar,
+    // sincroniza para que F5 muestre siempre lo compartido.
+    if (Store.useCloud()) {
+      Store.syncFromCloud().then(function () {
+        loadConfigForm();
+        renderSeries();
+        fetchAnnouncements();
+      }).catch(function () {});
+    }
     $('btn-add-ann').addEventListener('click', addAnnouncement);
     $('btn-export-ann').addEventListener('click', exportAnnouncements);
     $('btn-load-ann').addEventListener('click', function () { $('ann-file-input').click(); });
