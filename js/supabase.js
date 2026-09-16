@@ -44,10 +44,11 @@ var Supabase = (function () {
   // ¿el admin guardó su propia config con service key?
   function hasAdminWrite() {
     var c = getCreds();
-    return !!(c && c.serviceKey);
+    return !!c;
   }
 
-  // key según modo: anon (público) o service (admin)
+  // key según modo: anon (público) o service (admin). Si no hay service key,
+  // se usa la publishable key: el RLS permite las escrituras de la app.
   function effectiveKey(mode) {
     var c = getCreds();
     if (mode === 'admin' && c.serviceKey) return c.serviceKey;
@@ -57,9 +58,6 @@ var Supabase = (function () {
   function request(method, path, body, mode, headersExtra) {
     var c = getCreds();
     if (!c) return Promise.reject(new Error('Supabase no configurado'));
-    if (mode === 'admin' && !c.serviceKey) {
-      return Promise.reject(new Error('Falta la Secret/Service Key. Agrégala en el panel (Project Settings → API).'));
-    }
     var api = c.url.replace(/\/$/, '');
     var key = effectiveKey(mode || 'anon');
     var headers = {
@@ -147,10 +145,16 @@ var Supabase = (function () {
   }
 
   function saveSeries(series) {
-    var tasks = (series || []).map(function (s) {
-      return Promise.resolve().then(function () { return upsertSerie(s); });
-    });
-    return Promise.all(tasks);
+    // Sincronización completa: la nube refleja exactamente la lista del admin.
+    // Primero borra todo (las imágenes se eliminan en cascada) y luego inserta.
+    series = series || [];
+    return request('DELETE', '/rest/v1/series?id=neq.00000000-0000-0000-0000-000000000000', null, 'admin')
+      .then(function () {
+        var tasks = series.map(function (s) {
+          return Promise.resolve().then(function () { return upsertSerie(s); });
+        });
+        return Promise.all(tasks);
+      });
   }
 
   function upsertSerie(serie) {

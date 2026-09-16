@@ -591,11 +591,10 @@ var Admin = (function () {
   function loadSupabaseStatus() {
     var el = $('supabase-status');
     var d = Supabase.getDefaults();
-    var serviceOk = Supabase.hasAdminWrite();
-    el.innerHTML = '⚡ Los jugadores ya leen los datos compartidos automáticamente (publishable key).<br>' +
-      (serviceOk
-        ? '✅ Service/Secret Key activa: el admin puede guardar series, config y anuncios en la nube.'
-        : '⚠ Sin Secret/Service Key: el admin aún NO puede escribir en la nube. Agrégala abajo para guardar cambios.');
+    el.innerHTML = '⚡ Todo conectado automáticamente con la publishable key: jugadores leen, admin escribe.<br>' +
+      (Supabase.hasAdminWrite()
+        ? '✅ Activado por defecto: guardar series, config y anuncios funciona sin configuración.'
+        : '⚠ Supabase no está configurado.');
 
     if (!sbStoredConfig) {
       $('sb-url').value = d.url;

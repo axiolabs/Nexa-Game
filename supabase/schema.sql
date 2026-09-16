@@ -56,8 +56,8 @@ on conflict (id) do nothing;
 
 -- ============================================================
 -- Políticas de seguridad por fila (RLS)
--- El juego es público: cualquier jugador puede leer rankings,
--- series, config y anuncios, e insertar su puntaje.
+-- Todo es público por diseño (juego colaborativo): cualquier
+-- jugador puede leer y escribir series, config y anuncios.
 -- ============================================================
 alter table public.config enable row level security;
 alter table public.series enable row level security;
@@ -66,20 +66,33 @@ alter table public.rankings enable row level security;
 alter table public.anuncios enable row level security;
 
 drop policy if exists config_public on public.config;
+drop policy if exists config_public_write on public.config;
 drop policy if exists series_public on public.series;
+drop policy if exists series_public_write on public.series;
 drop policy if exists imagenes_public on public.imagenes;
+drop policy if exists imagenes_public_write on public.imagenes;
 drop policy if exists rankings_public_read on public.rankings;
 drop policy if exists rankings_public_insert on public.rankings;
 drop policy if exists anuncios_public on public.anuncios;
+drop policy if exists anuncios_public_write on public.anuncios;
 
 create policy config_public on public.config
   for select using (true);
 
+create policy config_public_write on public.config
+  for all using (true) with check (true);
+
 create policy series_public on public.series
   for select using (true);
 
+create policy series_public_write on public.series
+  for all using (true) with check (true);
+
 create policy imagenes_public on public.imagenes
   for select using (true);
+
+create policy imagenes_public_write on public.imagenes
+  for all using (true) with check (true);
 
 create policy rankings_public_read on public.rankings
   for select using (true);
@@ -89,6 +102,9 @@ create policy rankings_public_insert on public.rankings
 
 create policy anuncios_public on public.anuncios
   for select using (true);
+
+create policy anuncios_public_write on public.anuncios
+  for all using (true) with check (true);
 
 -- ============================================================
 -- Insertar la configuración por defecto

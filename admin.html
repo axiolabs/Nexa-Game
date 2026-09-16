@@ -79,13 +79,13 @@
           </label>
         </div>
         <div class="form-grid form-2col" style="margin-top:8px">
-          <label>Service Role Key (secreta, escribe datos)
-            <input type="password" id="sb-service" placeholder="eyJ... (solo en este navegador)">
+          <label>Service Role Key (opcional: solo si quieres privilegios extra)
+            <input type="password" id="sb-service" placeholder="eyJ... (opcional)">
           </label>
           <div></div>
         </div>
-        <p class="hint" style="margin-top:8px">Guarda los datos compartidos de tu proyecto. La <b>publishable key</b> es pública (los jugadores leen y registran su puntaje). La <b>Secret/Service Key</b> es secreta y solo vive en este navegador para que el admin pueda guardar series, config y anuncios. En Supabase Dashboard → Project Settings → API.</p>
-        <p class="hint" id="sb-hint-fill" style="margin-top:8px">🔎 Ya viene precargado con tu proyecto y publishable key.</p>
+        <p class="hint" style="margin-top:8px">Los datos compartidos se guardan con tu proyecto. La <b>publishable key</b> es pública y, con el RLS del schema, permite a cualquier navegador leer y escribir series, config y anuncios: <b>no necesitas configurar nada</b>. La <b>Secret/Service Key</b> es opcional (mayores privilegios) y solo vive en este navegador. En Supabase Dashboard → Project Settings → API.</p>
+        <p class="hint" id="sb-hint-fill" style="margin-top:8px">🔎 Ya viene precargado con tu proyecto y publishable key: todo conectado por defecto.</p>
         <div class="pw-section" style="border-top:none;margin-top:10px;padding-top:0">
           <button class="btn btn-primary" id="btn-sb-connect">🔗 Conectar</button>
           <button class="btn btn-danger" id="btn-sb-disconnect" style="margin-left:10px">Desconectar</button>
