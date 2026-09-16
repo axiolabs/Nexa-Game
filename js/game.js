@@ -98,8 +98,15 @@ var G = (function () {
     $('btn-round-next').addEventListener('click', nextRound);
     $('btn-focus').addEventListener('click', focusMore);
     $('btn-answer').addEventListener('click', answer);
+    $('answer-input').addEventListener('input', function (e) {
+      updateSuggestions(e.target.value);
+    });
     $('answer-input').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') answer();
+      if (e.key === 'Enter') { hideSuggestions(); answer(); }
+      if (e.key === 'Escape') hideSuggestions();
+    });
+    $('answer-input').addEventListener('blur', function () {
+      setTimeout(hideSuggestions, 120);
     });
 
     $('lightbox-close').addEventListener('click', closeLightbox);
@@ -431,6 +438,53 @@ var G = (function () {
 
   /* ---------------- Respuesta por texto ---------------- */
 
+  // Todos los nombres/variantes únicos de las series, para sugerencias.
+  function suggestionNames() {
+    var seen = {};
+    return Store.getSeries().reduce(function (acc, s) {
+      [s.nombre].concat(s.variantes || []).forEach(function (n) {
+        var key = normalize(n);
+        if (!seen[key]) { seen[key] = true; acc.push(n); }
+      });
+      return acc;
+    }, []);
+  }
+
+  // Muestra sugerencias que coinciden (por prefijo de palabra) con lo escrito.
+  // Se filtran ignorando acentos/espacios y se descartan opciones ya respondidas.
+  function updateSuggestions(nombre) {
+    var list = $('suggest-list');
+    var q = normalize(nombre).trim();
+    if (!q) { list.classList.add('hidden'); return; }
+    var words = q.split(' ');
+    var matches = suggestionNames().filter(function (n) {
+      var nn = normalize(n);
+      return words.every(function (w) {
+        return nn.split(' ').some(function (t) { return t.indexOf(w) === 0; });
+      });
+    }).slice(0, 5);
+    if (!matches.length) { list.classList.add('hidden'); return; }
+    list.innerHTML = '';
+    matches.forEach(function (m) {
+      var item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'suggest-item';
+      item.textContent = m;
+      item.addEventListener('click', function () {
+        $('answer-input').value = m;
+        hideSuggestions();
+        answer();
+      });
+      list.appendChild(item);
+    });
+    list.classList.remove('hidden');
+  }
+
+  function hideSuggestions() {
+    var list = $('suggest-list');
+    if (list) list.classList.add('hidden');
+  }
+
   function renderAnswerInput() {
     var input = $('answer-input');
     input.value = '';
@@ -440,21 +494,7 @@ var G = (function () {
     $('msg-box').classList.add('hidden');
     $('answer-row').classList.add('hidden');
     $('btn-answer').disabled = false;
-    // sugerencias de autocompletado con nombres y variantes de todas las series
-    var dl = $('series-suggest');
-    dl.innerHTML = '';
-    var seen = {};
-    Store.getSeries().forEach(function (s) {
-      var names = [s.nombre].concat(s.variantes || []);
-      names.forEach(function (n) {
-        var key = normalize(n);
-        if (seen[key]) return;
-        seen[key] = true;
-        var opt = document.createElement('option');
-        opt.value = n;
-        dl.appendChild(opt);
-      });
-    });
+    hideSuggestions();
     if (state.mode !== 'galeria') input.focus();
   }
 

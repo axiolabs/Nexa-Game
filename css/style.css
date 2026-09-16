@@ -417,9 +417,16 @@ body {
 .answer-input-row {
   display: flex;
   gap: 10px;
+  align-items: flex-start;
 }
-.answer-input-row input {
+.answer-input-wrap {
+  position: relative;
   flex: 1;
+  display: flex;
+}
+.answer-input-wrap input {
+  flex: 1;
+  width: 100%;
   background: var(--card);
   border: 1.5px solid var(--card-bor);
   color: var(--text);
@@ -430,12 +437,41 @@ body {
   outline: none;
   transition: border-color .12s, background .12s;
 }
-.answer-input-row input::placeholder { color: var(--dim); }
-.answer-input-row input:focus { border-color: var(--accent); }
-.answer-input-row input.right { border-color: var(--good); background: rgba(52,211,153,.12); }
-.answer-input-row input.wrong { border-color: var(--bad); background: rgba(248,113,113,.12); }
-.answer-input-row input:disabled { opacity: .75; }
+.answer-input-wrap input::placeholder { color: var(--dim); }
+.answer-input-wrap input:focus { border-color: var(--accent); }
+.answer-input-wrap input.right { border-color: var(--good); background: rgba(52,211,153,.12); }
+.answer-input-wrap input.wrong { border-color: var(--bad); background: rgba(248,113,113,.12); }
+.answer-input-wrap input:disabled { opacity: .75; }
 .answer-input-row .btn { white-space: nowrap; }
+
+/* Sugerencias de autocompletado mientras se escribe */
+.suggest-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: var(--card);
+  border: 1px solid var(--card-bor);
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.45);
+  overflow: hidden;
+}
+.suggest-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 10px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.suggest-item:hover,
+.suggest-item:focus { background: rgba(255,255,255,.08); }
+.suggest-item + .suggest-item { border-top: 1px solid var(--card-bor); }
 
 .focus-row {
   display: flex;

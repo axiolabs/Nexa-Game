@@ -138,9 +138,11 @@
 
     <div class="answer-zone">
       <div class="answer-input-row" id="answer-input-row">
-        <input type="text" id="answer-input" maxlength="40"
-               placeholder="Escribe el nombre de la serie…" autocomplete="off" list="series-suggest">
-        <datalist id="series-suggest"></datalist>
+        <div class="answer-input-wrap">
+          <input type="text" id="answer-input" maxlength="40"
+                 placeholder="Escribe el nombre de la serie…" autocomplete="off">
+          <div class="suggest-list" id="suggest-list"></div>
+        </div>
         <button class="btn btn-primary" id="btn-answer">Responder</button>
       </div>
       <div class="msg-box hidden" id="msg-box"></div>
