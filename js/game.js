@@ -68,7 +68,6 @@ var G = (function () {
   /* ---------------- Inicialización ---------------- */
 
   function init() {
-    createSeedSeries();
     screens.menu = $('screen-menu');
     screens.modos = $('screen-modos');
     screens.dificultad = $('screen-dificultad');

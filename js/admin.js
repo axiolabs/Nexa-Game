@@ -650,7 +650,6 @@ var Admin = (function () {
   function btnSbBusy(b) {
     $('btn-sb-connect').disabled = b;
     $('btn-sb-test').disabled = b;
-    $('btn-sb-seed').disabled = b;
   }
 
   function disconnectSupabase() {
@@ -685,24 +684,6 @@ var Admin = (function () {
     });
   }
 
-  function seedToCloud() {
-    if (!Supabase.isConfigured()) { sbMsg('❌ Conecta Supabase primero.', true); return; }
-    if (!confirm('¿Subir las series demostración (SVG) a la nube? Los datos actuales de la nube se mantendrán.')) return;
-    btnSbBusy(true);
-    sbMsg('Subiendo series demo a la nube...');
-    var local = Store.getSeries();
-    Supabase.saveSeries(JSON.parse(JSON.stringify(local))).then(function () {
-      return Store.syncFromCloud();
-    }).then(function () {
-      sbMsg('✅ Datos demo subidos y sincronizados.');
-      btnSbBusy(false);
-      renderSeries();
-    }).catch(function (e) {
-      sbMsg('❌ Error al subir: ' + (e.message || e), true);
-      btnSbBusy(false);
-    });
-  }
-
   /* ---------------- Init ---------------- */
 
   function initAdmin() {
@@ -730,14 +711,12 @@ var Admin = (function () {
     $('btn-sb-connect').addEventListener('click', connectSupabase);
     $('btn-sb-disconnect').addEventListener('click', disconnectSupabase);
     $('btn-sb-test').addEventListener('click', testSupabase);
-    $('btn-sb-seed').addEventListener('click', seedToCloud);
     $('btn-cd-save').addEventListener('click', saveCloudinary);
     $('btn-cd-clear').addEventListener('click', clearCloudinary);
     $('btn-cd-test').addEventListener('click', testCloudinary);
   }
 
   function init() {
-    createSeedSeries();
     $('btn-login').addEventListener('click', doLogin);
     $('login-pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin(); });
     $('btn-logout').addEventListener('click', doLogout);
