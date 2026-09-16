@@ -31,7 +31,12 @@ var Store = (function () {
   }
 
   function uid() {
-    return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    // UUID v4 que Supabase acepta en columnas uuid
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0;
+      var v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
   }
 
   function isCloud() { return Supabase.isConfigured(); }
@@ -39,6 +44,10 @@ var Store = (function () {
   function normalize(s) {
     s.imagenes = s.imagenes || [];
     s.variantes = s.variantes || [];
+    // IDs válidos para Supabase: regenera los de formato antiguo (ej: 'sabc123...')
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(s.id || '')) {
+      s.id = uid();
+    }
     s.imagenes.forEach(function (im, k) {
       if (typeof im.posicion === 'undefined') im.posicion = k + 1;
       if (typeof im.dificultad === 'undefined') im.dificultad = Math.min(k + 1, 5);
