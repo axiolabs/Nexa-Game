@@ -628,6 +628,7 @@ var G = (function () {
       endGame();
     } else {
       state.ronda++;
+      showScreen('game');
       loadRound();
     }
   }
@@ -669,7 +670,7 @@ var G = (function () {
       nombre: name,
       modo: MODE_NAMES[state.mode],
       puntos: state.score,
-      fecha: new Date().toLocaleDateString('es-ES')
+      fecha: new Date().toISOString().slice(0, 10)
     });
   }
 

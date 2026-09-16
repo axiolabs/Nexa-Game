@@ -38,6 +38,7 @@ var Admin = (function () {
     if (Store.isAdminAuthed()) {
       $('admin-area').style.display = '';
       $('btn-logout').style.display = '';
+      initAdmin();
     } else {
       $('login-area').style.display = '';
     }
