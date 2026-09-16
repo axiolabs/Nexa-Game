@@ -97,6 +97,12 @@ var G = (function () {
     $('btn-resume').addEventListener('click', resumeGame);
     $('btn-round-next').addEventListener('click', nextRound);
 
+    $('lightbox-close').addEventListener('click', closeLightbox);
+    document.querySelector('.lightbox-bg').addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !$('lightbox').classList.contains('hidden')) closeLightbox();
+    });
+
     var snap = Store.getSnapshot();
     if (snap && snap.queue && snap.queue.length) {
       $('btn-resume').classList.remove('hidden');
@@ -380,13 +386,29 @@ var G = (function () {
       cell.className = 'gallery-cell';
       cell.dataset.i = i;
       var img = fotos[i];
-      if (img) cell.style.backgroundImage = 'url("' + img.data + '")';
-      else {
+      if (img) {
+        cell.style.backgroundImage = 'url("' + img.data + '")';
+        cell.addEventListener('click', function () { openLightbox(this); });
+        cell.style.cursor = 'zoom-in';
+      } else {
         cell.classList.add('empty');
         cell.innerHTML = '<div class="pos-tag">?</div>';
       }
       grid.appendChild(cell);
     }
+  }
+
+  /* ---------------- Lightbox (ver imagen grande) ---------------- */
+
+  function openLightbox(cell) {
+    if (!cell.classList.contains('revealed')) return;
+    $('lightbox-img').style.backgroundImage = cell.style.backgroundImage;
+    $('lightbox').classList.remove('hidden');
+  }
+
+  function closeLightbox() {
+    $('lightbox').classList.add('hidden');
+    $('lightbox-img').style.backgroundImage = '';
   }
 
   function updateGalleryReveal() {
