@@ -1,10 +1,17 @@
 var Store = (function () {
-  var DEFAULT_CONFIG = {
+  var DEFAULT_DIFF = {
     rondasPorPartida: 5,
     segundosPasoBlur: 2.5,
     segundosContrarreloj: 25,
-    vidasSupervivencia: 3,
-    maxRanking: 10
+    vidasSupervivencia: 3
+  };
+  var DEFAULT_CONFIG = {
+    maxRanking: 10,
+    dificultades: {
+      facil: Object.assign({}, DEFAULT_DIFF),
+      media: Object.assign({}, DEFAULT_DIFF),
+      dificil: Object.assign({}, DEFAULT_DIFF)
+    }
   };
 
   // cache en memoria (fuente de verdad cuando se usa nube)
@@ -41,6 +48,35 @@ var Store = (function () {
 
   function isCloud() { return Supabase.isConfigured(); }
 
+  // Normaliza cualquier config (vieja plana o nueva por dificultad) al
+  // formato interno: { maxRanking, dificultades: { facil, media, dificil } }.
+  function normalizeConfig(c) {
+    var base;
+    if (c && c.dificultades) {
+      base = c;
+    } else {
+      base = { maxRanking: c && c.maxRanking != null ? c.maxRanking : DEFAULT_CONFIG.maxRanking };
+      base.dificultades = {};
+      var src = c || {};
+      ['facil', 'media', 'dificil'].forEach(function (d) {
+        base.dificultades[d] = {
+          rondasPorPartida: src.rondasPorPartida != null ? src.rondasPorPartida : DEFAULT_DIFF.rondasPorPartida,
+          segundosPasoBlur: src.segundosPasoBlur != null ? src.segundosPasoBlur : DEFAULT_DIFF.segundosPasoBlur,
+          segundosContrarreloj: src.segundosContrarreloj != null ? src.segundosContrarreloj : DEFAULT_DIFF.segundosContrarreloj,
+          vidasSupervivencia: src.vidasSupervivencia != null ? src.vidasSupervivencia : DEFAULT_DIFF.vidasSupervivencia
+        };
+      });
+    }
+    var out = {
+      maxRanking: base.maxRanking != null ? base.maxRanking : DEFAULT_CONFIG.maxRanking,
+      dificultades: {}
+    };
+    ['facil', 'media', 'dificil'].forEach(function (d) {
+      out.dificultades[d] = Object.assign({}, DEFAULT_DIFF, base.dificultades && base.dificultades[d]);
+    });
+    return out;
+  }
+
   function normalize(s) {
     s.imagenes = s.imagenes || [];
     s.variantes = s.variantes || [];
@@ -71,16 +107,26 @@ var Store = (function () {
     DEFAULT_CONFIG: DEFAULT_CONFIG,
 
     getConfig: function () {
-      var c = read('gts_config', null);
-      return c ? Object.assign({}, DEFAULT_CONFIG, c) : Object.assign({}, DEFAULT_CONFIG);
+      // Normaliza la config interna: si llega una vieja config plana
+      // (objeto directo con rondasPorPartida...), la reparte en dificultades.
+      return normalizeConfig(read('gts_config', null));
     },
-    saveConfig: function (patch) {
+
+    getDiffConfig: function (diff) {
       var c = Store.getConfig();
-      Object.assign(c, patch);
-      write('gts_config', c);
-      mem.config = c;
+      return c.dificultades && c.dificultades[diff]
+        ? Object.assign({}, DEFAULT_DIFF, c.dificultades[diff])
+        : Object.assign({}, DEFAULT_DIFF);
+    },
+
+    saveConfig: function (cfg) {
+      var merged = Store.getConfig();
+      if (cfg.dificultades) merged.dificultades = Object.assign(merged.dificultades, cfg.dificultades);
+      if (cfg.maxRanking != null) merged.maxRanking = cfg.maxRanking;
+      write('gts_config', merged);
+      mem.config = merged;
       if (isCloud()) {
-        Supabase.upsertConfig(c).then(function () {}).catch(function () {});
+        Supabase.upsertConfig(JSON.parse(JSON.stringify(merged))).then(function () {}).catch(function () {});
       }
     },
 
@@ -176,7 +222,9 @@ var Store = (function () {
         var series = res[0], cfg = res[1], top = res[2];
         mem.series = series.map(normalize);
         mem.top = top;
-        var merged = Object.assign({}, DEFAULT_CONFIG, Store.getConfig(), cfg);
+        // La nube es la fuente de verdad: se normaliza cualquier formato
+        // (nuevo por dificultad o viejo plano) y se guarda en local.
+        var merged = normalizeConfig(cfg);
         mem.config = merged;
         write('gts_config', merged);
         write('gts_series', JSON.parse(JSON.stringify(mem.series)));

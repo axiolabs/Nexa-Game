@@ -85,19 +85,28 @@ var Admin = (function () {
 
   function loadConfigForm() {
     var c = Store.getConfig();
-    $('cfg-rondas').value = c.rondasPorPartida;
-    $('cfg-paso').value = c.segundosPasoBlur;
-    $('cfg-contra').value = c.segundosContrarreloj;
-    $('cfg-vidas').value = c.vidasSupervivencia;
+    ['facil', 'media', 'dificil'].forEach(function (d) {
+      var dc = c.dificultades[d] || {};
+      $('cfg-rondas-' + d).value = dc.rondasPorPartida;
+      $('cfg-paso-' + d).value = dc.segundosPasoBlur;
+      $('cfg-contra-' + d).value = dc.segundosContrarreloj;
+      $('cfg-vidas-' + d).value = dc.vidasSupervivencia;
+    });
     $('cfg-maxrank').value = c.maxRanking;
   }
 
   function saveConfigForm() {
+    var dificultades = {};
+    ['facil', 'media', 'dificil'].forEach(function (d) {
+      dificultades[d] = {
+        rondasPorPartida: clamp(parseInt($('cfg-rondas-' + d).value, 10), 1, 30),
+        segundosPasoBlur: clamp(parseFloat($('cfg-paso-' + d).value), 0.5, 15),
+        segundosContrarreloj: clamp(parseInt($('cfg-contra-' + d).value, 10), 5, 120),
+        vidasSupervivencia: clamp(parseInt($('cfg-vidas-' + d).value, 10), 1, 10)
+      };
+    });
     Store.saveConfig({
-      rondasPorPartida: clamp(parseInt($('cfg-rondas').value, 10), 1, 30),
-      segundosPasoBlur: clamp(parseFloat($('cfg-paso').value), 0.5, 15),
-      segundosContrarreloj: clamp(parseInt($('cfg-contra').value, 10), 5, 120),
-      vidasSupervivencia: clamp(parseInt($('cfg-vidas').value, 10), 1, 10),
+      dificultades: dificultades,
       maxRanking: clamp(parseInt($('cfg-maxrank').value, 10), 3, 50)
     });
     var msg = $('card-config').querySelector('.flash');

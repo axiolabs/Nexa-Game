@@ -236,7 +236,7 @@ var G = (function () {
 
   function startGame(diff) {
     state.diff = diff;
-    var cfg = Store.getConfig();
+    var cfg = Store.getDiffConfig(state.diff);
     state.rondas = cfg.rondasPorPartida || 5;
     state.score = 0;
     state.aciertos = 0;
@@ -488,7 +488,7 @@ var G = (function () {
   }
 
   function stepInterval() {
-    var cfg = Store.getConfig();
+    var cfg = Store.getDiffConfig(state.diff);
     var base = (cfg.segundosPasoBlur || 2.5) * 1000;
     var mult = state.diff === 'facil' ? 0.8 : state.diff === 'dificil' ? 1.3 : 1;
     return base * mult;
@@ -499,7 +499,7 @@ var G = (function () {
   var contraId = null;
   var contraRemain = 0;
   function startContraTimer() {
-    var cfg = Store.getConfig();
+    var cfg = Store.getDiffConfig(state.diff);
     var total = (cfg.segundosContrarreloj || 25);
     contraRemain = total;
     var fill = $('timer-fill');
@@ -586,7 +586,7 @@ var G = (function () {
       return { base: MODE_STEP_POINTS.galeria[gIdx], label: 'Adivinada con ' + state.revealedImgs + ' de ' + state.maxRevealImgs + ' imágenes' };
     }
     if (state.mode === 'contrarreloj') {
-      var cfg = Store.getConfig();
+      var cfg = Store.getDiffConfig(state.diff);
       var total = cfg.segundosContrarreloj || 25;
       var remain = contraRemain;
       var frac = Math.max(remain, 0) / total;
